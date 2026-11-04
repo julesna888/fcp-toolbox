@@ -1,0 +1,28 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ffmpeg (some tests read real video)
+        run: brew install ffmpeg
+      - name: Test
+        run: swift test
+      - name: Build app and dmg
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: scripts/build_app.sh "${GITHUB_REF_NAME#v}"
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release create "$GITHUB_REF_NAME" dist/*.dmg --generate-notes
