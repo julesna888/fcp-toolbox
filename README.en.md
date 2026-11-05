@@ -22,17 +22,17 @@ With media on an external disk, Final Cut puts files in `Final Cut Original Medi
 
 ## Tools
 
-- **Client pool**: drop the downloaded folder (Drive, Downloads…). It moves or copies it to `Client / Video`, sorts the clips by name, checks them (VFR, HEVC, 4K, duplicates: the notes say what may slow Final Cut down) and creates an `.fcpxml` file that Final Cut opens as a ready-made event. The client is a guess from the folder name: you can correct it.
+- **Client pool**: drop the downloaded folder (Drive, Downloads…). It moves or copies it to `Client / Video` (clips in `Originali`, everything else in `Altro`), sorts the clips by name, checks them (VFR, HEVC, 4K, duplicates: the notes say what may slow Final Cut down) and creates an `.fcpxml` file that Final Cut opens as a ready-made event. The client is a guess from the folder name: you can correct it.
 - **Preflight**: before a long session it checks space, memory used by other apps, Low Power Mode and temperature, and lets you quit (normal quit, with a save prompt) heavy apps such as the browser. It never touches system apps or Final Cut.
 - **Final Cut crashes**: reads the reports in `~/Library/Logs/DiagnosticReports`, groups crashes with the same cause, explains it and copies a ready-to-send text for Apple Support.
 - **Disks**: free space, SMART status, a low-space alert, the largest files, and **Format a new disk…** (APFS or Mac OS Extended, GPT) with double confirmation; physical external disks only.
-- **Verified backup**: copies a library with SHA-256 checking, never deleting anything; backup history.
-- **Menu bar shelf** (icon at the top right): keep files within reach, drag them onto the icon or into the popover and out again. It stores only paths, copies nothing. When the window is closed the app stays in the background, with no timers or polling.
+- **Verified backup**: copies a library with SHA-256 checking. It deletes nothing from the backup and never overwrites a backup file that is newer than the original; it only replaces old copies of changed files. Backup history.
+- **Menu bar shelf** (icon at the top right): keep files within reach, drag them onto the icon or into the popover and out again. It stores only paths, copies nothing. When the window is closed the app stays in the background, with a light check every 5–10 minutes (Pool clip expiry, alerts if you turned them on, performance samples only while Final Cut is open).
 - **Libraries and projects**: the tree of libraries → events → projects and clips, with the real size (including media linked outside the library), search, sorting and CSV export. Select a clip and press the **space bar** for a Quick Look preview, as in Finder. Right-click to move a library, event, project, clip or its original video file to the Trash.
 - **Space map**: one row per import day, with size, how much is used by a library and how much isn't. Sortable columns, "Show in Finder".
 - **Missing media**: the broken library links (the red clips), showing where a file with the same name still exists.
 - **Orphan media**: files that no library found uses. You move them to the **Trash**, never delete them, and you can recover them.
-- **Cache and renders**: empties only the renders and optimised media inside the libraries, never the originals.
+- **Cache and renders**: empties only the renders and optimised media inside the libraries (analysis files only if you choose), never the originals. Here files are deleted straight away, not sent to the Trash: Final Cut recreates them when needed.
 - **Library health**: a 0–100 score with the reasons (linked media, backup, space, access, regenerable files), growth over time with a free-space forecast, and a history of the Mac's performance while Final Cut is open.
 - **Automations**: alerts for low space, old backups, new crashes, a weekly report and a check of new exports. Everything is off until you turn it on.
 - **Media inspector**: real details of each file, delivery check (YouTube, Reels…), subtitles (SRT/VTT checks and fixes) and proxies.
@@ -48,7 +48,7 @@ It reads the symbolic links in the `Original Media` folder of every event of eve
 
 You decide what to do with disks, folders, libraries, events and projects. The app warns you, it doesn't block you. The fixed rules are few:
 
-- Everything you remove goes to the **Trash**, so it is recoverable until you empty it. It asks for confirmation first and tells you what you lose.
+- Everything you remove goes to the **Trash**, so it is recoverable until you empty it. The one exception is "Cache and renders", which empties files Final Cut recreates by itself. It asks for confirmation first and tells you what you lose.
 - It acts only inside the disks and folders you added, never on the added folder itself.
 - Before touching anything it re-checks the path on disk and doesn't trust the displayed list.
 - It refuses to delete or move anything if Final Cut Pro is open. Backup only warns you instead: the copy may not be consistent.

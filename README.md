@@ -25,17 +25,17 @@ Con i media su un disco esterno, Final Cut mette i file in `Final Cut Original M
 
 ## Strumenti
 
-- **Pool clienti**: trascina la cartella scaricata (Drive, Download…). La sposta o copia in `Cliente / Video`, ordina le clip per nome, le controlla (VFR, HEVC, 4K, duplicati: le note dicono cosa può rallentare Final Cut) e crea un file `.fcpxml` che Final Cut apre come evento già pronto. Il cliente è un'ipotesi dal nome della cartella: puoi correggerlo.
+- **Pool clienti**: trascina la cartella scaricata (Drive, Download…). La sposta o copia in `Cliente / Video` (le clip in `Originali`, il resto in `Altro`), ordina le clip per nome, le controlla (VFR, HEVC, 4K, duplicati: le note dicono cosa può rallentare Final Cut) e crea un file `.fcpxml` che Final Cut apre come evento già pronto. Il cliente è un'ipotesi dal nome della cartella: puoi correggerlo.
 - **Preflight**: prima di una sessione lunga controlla spazio, memoria occupata da altre app, risparmio energia e temperatura, e ti lascia chiudere (chiusura normale, con richiesta di salvare) le app pesanti come il browser. Non tocca mai app di sistema né Final Cut.
 - **Crash di Final Cut**: legge i report in `~/Library/Logs/DiagnosticReports`, raggruppa i crash con la stessa causa, la spiega e copia un testo pronto per l'assistenza Apple.
 - **Dischi**: spazio libero, stato SMART, avviso sotto una soglia, i file più grandi, e **Formatta un nuovo disco…** (APFS o Mac OS Esteso, GPT) con doppia conferma; solo dischi esterni fisici.
-- **Backup verificato**: copia una libreria con controllo SHA-256, senza mai cancellare nulla; storico dei backup.
-- **Cesto nella barra dei menu** (icona a destra, in alto): tieni file a portata di mano, trascinali sull'icona o nel popover e fuori di nuovo. Salva solo i percorsi, non copia niente. Chiusa la finestra l'app va in background, senza timer né polling.
+- **Backup verificato**: copia una libreria con controllo SHA-256. Non cancella nulla dal backup e non sovrascrive mai un file del backup più recente dell'originale; sostituisce solo le copie vecchie dei file cambiati. Storico dei backup.
+- **Cesto nella barra dei menu** (icona a destra, in alto): tieni file a portata di mano, trascinali sull'icona o nel popover e fuori di nuovo. Salva solo i percorsi, non copia niente. Chiusa la finestra l'app resta in background, con un controllo leggero ogni 5–10 minuti (scadenza delle clip del Pool, avvisi se li hai accesi, misure di prestazione solo con Final Cut aperto).
 - **Librerie e progetti**: l'albero librerie → eventi → progetti e clip, con il peso vero (anche dei media collegati fuori dalla libreria), ricerca, ordinamento ed esportazione CSV. Seleziona una clip e premi la **barra spaziatrice** per l'anteprima Quick Look, come nel Finder. Tasto destro per spostare nel Cestino una libreria, un evento, un progetto, una clip o il suo file video originale.
 - **Mappa spazio**: una riga per ogni giorno di importazione, con peso, quanto è usato da una libreria e quanto no. Colonne ordinabili, “Mostra nel Finder”.
 - **Media mancanti**: i collegamenti rotti delle librerie (le clip rosse), con l'indicazione di dove esiste ancora un file con lo stesso nome.
 - **Media orfani**: file che nessuna libreria trovata usa. Li sposti nel **Cestino**, mai cancellati, e li puoi recuperare.
-- **Cache e render**: svuota solo i render e i media ottimizzati dentro le librerie, mai gli originali.
+- **Cache e render**: svuota solo i render e i media ottimizzati dentro le librerie (i file di analisi solo se lo scegli), mai gli originali. Qui i file sono cancellati subito, senza passare dal Cestino: Final Cut li ricrea quando servono.
 
 - **Salute libreria**: punteggio 0–100 con i motivi (media collegati, backup, spazio, accesso, file rigenerabili), crescita nel tempo con previsione dello spazio e storico delle prestazioni del Mac mentre Final Cut è aperto.
 - **Automazioni**: avvisi su spazio basso, backup vecchio, nuovi crash, report settimanale e controllo dei nuovi export. Tutto spento finché non lo accendi.
@@ -52,7 +52,7 @@ Legge i collegamenti simbolici nella cartella `Original Media` di ogni evento di
 
 Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti avvisa, non ti blocca. Le regole fisse sono poche:
 
-- Tutto ciò che elimini va nel **Cestino**, quindi si recupera finché non lo svuoti. Prima chiede conferma e dice cosa perdi.
+- Tutto ciò che elimini va nel **Cestino**, quindi si recupera finché non lo svuoti. Unica eccezione: «Cache e render», che svuota file che Final Cut ricrea da solo. Prima chiede conferma e dice cosa perdi.
 - Agisce solo dentro i dischi e le cartelle che hai aggiunto, mai sulla cartella aggiunta stessa.
 - Prima di toccare qualcosa ricontrolla il percorso sul disco, non si fida della lista mostrata.
 - Rifiuta di cancellare o spostare se Final Cut Pro è aperto. Il backup invece ti avvisa e basta: la copia potrebbe non essere coerente.
