@@ -15,9 +15,9 @@ public enum BenchError: LocalizedError, Equatable {
 
     public var errorDescription: String? {
         switch self {
-        case .notEnoughSpace(let n, let f): return "Spazio insufficiente per il test: servono \(formatBytes(n)), ne restano \(formatBytes(f))."
+        case .notEnoughSpace(let n, let f): return TF("Spazio insufficiente per il test: servono %@, ne restano %@.", formatBytes(n), formatBytes(f))
         case .notWritable: return "Il disco non è scrivibile."
-        case .failed(let m): return "Test interrotto: \(m)"
+        case .failed(let m): return TF("Test interrotto: %@", m)
         }
     }
 }
@@ -91,20 +91,20 @@ extension Doctor {
         } else if fmt.contains("exfat") {
             worsen(.limited); reasons.append("exFAT: va bene per i media, ma Apple indica APFS o Mac OS Esteso per le librerie, e se si scollega male si rovina più facilmente.")
         } else if fmt.contains("apfs") || fmt.contains("mac os") {
-            reasons.append("Formato \(v.format): adatto a Final Cut.")
+            reasons.append(TF("Formato %@: adatto a Final Cut.", v.format))
         } else {
-            worsen(.limited); reasons.append("Formato \(v.format): non lo conosco come adatto a Final Cut.")
+            worsen(.limited); reasons.append(TF("Formato %@: non lo conosco come adatto a Final Cut.", v.format))
         }
 
         if let s = v.smart {
             if s == "Verified" { reasons.append("SMART: verificato.") }
-            else { worsen(.unfit); reasons.append("SMART: \(s). Il disco segnala un problema, non metterci lavoro importante.") }
+            else { worsen(.unfit); reasons.append(TF("SMART: %@. Il disco segnala un problema, non metterci lavoro importante.", s)) }
         } else {
             reasons.append("SMART non disponibile: non posso dire nulla sullo stato di salute (succede con molti box USB).")
         }
 
         if v.free < Int64(lowSpaceGB) * 1_000_000_000 {
-            worsen(.limited); reasons.append("Meno di \(lowSpaceGB) GB liberi.")
+            worsen(.limited); reasons.append(TF("Meno di %@ GB liberi.", lowSpaceGB))
         }
 
         if let s = speed {

@@ -22,7 +22,7 @@ final class Model: ObservableObject {
         for u in urls {
             if u.isFileURL { files.append(u) }
             else if let link = DeepLink.parse(u) { open(link.toolID, urls: link.files) }
-            else if u.scheme == DeepLink.scheme { notice = "Link di FCP Toolbox non valido: \(u.absoluteString)" }
+            else if u.scheme == DeepLink.scheme { notice = LF("Link di FCP Toolbox non valido: %@", u.absoluteString) }
         }
         if !files.isEmpty { open(DeepLink.dropID, urls: files) }
     }
@@ -105,13 +105,13 @@ final class Model: ObservableObject {
         }
         busy = true
         Task {
-            status = "Cerco le librerie Final Cut…"
+            status = L("Cerco le librerie Final Cut…")
             let libs = await Task.detached(priority: .userInitiated) {
                 Doctor.findBundles(in: roots).map(Doctor.scan)
             }.value
             libraries = libs
             Task.detached(priority: .utility) { Doctor.recordSnapshots(libs) }
-            status = "Confronto i media con le librerie…"
+            status = L("Confronto i media con le librerie…")
             let (rep, nodes) = await Task.detached(priority: .userInitiated) {
                 (Doctor.mediaReport(roots: roots, libraries: libs), Doctor.tree(of: libs))
             }.value
@@ -132,7 +132,7 @@ final class Model: ObservableObject {
         }
         let items = cleanable
         busy = true
-        status = "Svuoto le cartelle…"
+        status = L("Svuoto le cartelle…")
         Task {
             let (r, rec) = await Task.detached(priority: .userInitiated) { () -> (CleanResult, OperationRecord) in
                 let before = Doctor.probe(items.map(\.url))
@@ -142,8 +142,8 @@ final class Model: ObservableObject {
                                               failures: r.failures, before: before)
                 return (r, rec)
             }.value
-            var msg = "Liberati circa \(formatBytes(r.freed)) (stima). \(rec.verification)"
-            if !r.failures.isEmpty { msg += "\n\nProblemi:\n" + r.failures.joined(separator: "\n") }
+            var msg = LF("Liberati circa %@ (stima). %@", formatBytes(r.freed), rec.verification)
+            if !r.failures.isEmpty { msg += "\n\n" + L("Problemi:") + "\n" + r.failures.joined(separator: "\n") }
             notice = msg
             busy = false
             rescan()
@@ -158,7 +158,7 @@ final class Model: ObservableObject {
         }
         let roots = roots
         busy = true
-        status = "Sposto nel Cestino…"
+        status = L("Sposto nel Cestino…")
         Task {
             let r = await Task.detached(priority: .userInitiated) { () -> TrashResult in
                 let before = Doctor.probe(urls)
@@ -167,8 +167,8 @@ final class Model: ObservableObject {
                                     paths: urls, estimated: r.bytes, failures: r.failures, before: before)
                 return r
             }.value
-            var msg = "Spostati nel Cestino \(r.moved) elementi (\(formatBytes(r.bytes))). Svuota il Cestino per liberare lo spazio."
-            if !r.failures.isEmpty { msg += "\n\nProblemi:\n" + r.failures.joined(separator: "\n") }
+            var msg = LF("Spostati nel Cestino %@ elementi (%@). Svuota il Cestino per liberare lo spazio.", r.moved, formatBytes(r.bytes))
+            if !r.failures.isEmpty { msg += "\n\n" + L("Problemi:") + "\n" + r.failures.joined(separator: "\n") }
             notice = msg
             busy = false
             rescan()
@@ -183,7 +183,7 @@ final class Model: ObservableObject {
         guard let folders = report?.mediaFolders else { return }
         let libs = libraries
         busy = true
-        status = "Sposto i file nel Cestino…"
+        status = L("Sposto i file nel Cestino…")
         Task {
             let r = await Task.detached(priority: .userInitiated) { () -> TrashResult in
                 let before = Doctor.probe(files.map(\.url))
@@ -192,8 +192,8 @@ final class Model: ObservableObject {
                                     paths: files.map(\.url), estimated: r.bytes, failures: r.failures, before: before)
                 return r
             }.value
-            var msg = "Spostati nel Cestino \(r.moved) file (\(formatBytes(r.bytes))). Svuota il Cestino per liberare lo spazio."
-            if !r.failures.isEmpty { msg += "\n\nProblemi:\n" + r.failures.joined(separator: "\n") }
+            var msg = LF("Spostati nel Cestino %@ file (%@). Svuota il Cestino per liberare lo spazio.", r.moved, formatBytes(r.bytes))
+            if !r.failures.isEmpty { msg += "\n\n" + L("Problemi:") + "\n" + r.failures.joined(separator: "\n") }
             notice = msg
             busy = false
             rescan()

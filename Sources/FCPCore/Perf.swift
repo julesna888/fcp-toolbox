@@ -173,11 +173,11 @@ extension Doctor {
         let top = counts.sorted { $0.value > $1.value }.prefix(3).map { (name: $0.key, times: $0.value) }
         func recurring(_ c: Int) -> Bool { c >= 3 && Double(c) / Double(max(n, 1)) >= 0.25 }
         var f: [String] = []
-        if recurring(pressure) { f.append("La memoria è sotto pressione in \(pressure) misure su \(n): il Mac comprime o scrive su disco. Chiudi app o aggiungi RAM.") }
-        if recurring(swap) { f.append("Lo swap supera un quarto della RAM in \(swap) misure su \(n).") }
-        if recurring(hot) { f.append("Il Mac era caldo e rallentava in \(hot) misure su \(n).") }
-        for t in top where recurring(t.times) { f.append("\(t.name) usa spesso molta CPU (\(t.times) misure su \(n)) mentre lavori.") }
-        if n < 5 { f.append("Poche misure (\(n)): per vedere problemi ricorrenti servono più sessioni.") }
+        if recurring(pressure) { f.append(TF("La memoria è sotto pressione in %@ misure su %@: il Mac comprime o scrive su disco. Chiudi app o aggiungi RAM.", pressure, n)) }
+        if recurring(swap) { f.append(TF("Lo swap supera un quarto della RAM in %@ misure su %@.", swap, n)) }
+        if recurring(hot) { f.append(TF("Il Mac era caldo e rallentava in %@ misure su %@.", hot, n)) }
+        for t in top where recurring(t.times) { f.append(TF("%@ usa spesso molta CPU (%@ misure su %@) mentre lavori.", t.name, t.times, n)) }
+        if n < 5 { f.append(TF("Poche misure (%@): per vedere problemi ricorrenti servono più sessioni.", n)) }
         return PerfSummary(samples: n, highPressure: pressure, heavySwap: swap, hot: hot, topInterferers: top, findings: f)
     }
 }

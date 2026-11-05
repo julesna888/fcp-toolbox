@@ -34,9 +34,9 @@ public enum SubtitleError: LocalizedError {
     case failed(String)
     public var errorDescription: String? {
         switch self {
-        case .noTool(let t): return "\(t) non trovato. Installalo con Homebrew (brew install \(t == "whisper-cli" ? "whisper-cpp" : "ffmpeg"))."
-        case .noModel(let m): return m.isEmpty ? "Nessun modello Whisper trovato. Scaricane uno (file ggml-*.bin) e mettilo in ~/Library/Application Support/FCP Toolbox/models." : "Modello non trovato: \(m)"
-        case .failed(let m): return "Trascrizione non riuscita: \(m)"
+        case .noTool(let t): return TF("%@ non trovato. Installalo con Homebrew (brew install %@).", t, t == "whisper-cli" ? "whisper-cpp" : "ffmpeg")
+        case .noModel(let m): return m.isEmpty ? "Nessun modello Whisper trovato. Scaricane uno (file ggml-*.bin) e mettilo in ~/Library/Application Support/FCP Toolbox/models." : TF("Modello non trovato: %@", m)
+        case .failed(let m): return TF("Trascrizione non riuscita: %@", m)
         }
     }
 }
@@ -98,7 +98,7 @@ extension Doctor {
             if dur < rules.minDuration { out.append(SubtitleIssue(cue: n, kind: "troppo breve", detail: "\(String(format: "%.1f", dur)) s, minimo \(rules.minDuration) s.")) }
             if dur > rules.maxDuration { out.append(SubtitleIssue(cue: n, kind: "troppo lunga", detail: "\(String(format: "%.1f", dur)) s, massimo \(rules.maxDuration) s.")) }
             let chars = Double(lines.joined().count)
-            if chars / dur > rules.maxCPS { out.append(SubtitleIssue(cue: n, kind: "troppo veloce", detail: "\(Int((chars / dur).rounded())) caratteri al secondo, massimo \(Int(rules.maxCPS)).")) }
+            if chars / dur > rules.maxCPS { out.append(SubtitleIssue(cue: n, kind: "troppo veloce", detail: TF("%@ caratteri al secondo, massimo %@.", Int((chars / dur).rounded()), Int(rules.maxCPS)))) }
             if lines.count > rules.maxLines { out.append(SubtitleIssue(cue: n, kind: "troppe righe", detail: "\(lines.count) righe, massimo \(rules.maxLines).")) }
             if let l = lines.map(\.count).max(), l > rules.maxCharsPerLine { out.append(SubtitleIssue(cue: n, kind: "riga lunga", detail: "\(l) caratteri, massimo \(rules.maxCharsPerLine).")) }
             if i + 1 < cues.count, c.end > cues[i + 1].start + 0.001 { out.append(SubtitleIssue(cue: n, kind: "sovrapposta", detail: "Finisce dopo l'inizio della successiva.")) }
@@ -164,7 +164,7 @@ extension Doctor {
         a.standardError = FileHandle.nullDevice
         try a.run()
         a.waitUntilExit()
-        guard a.terminationStatus == 0 else { throw SubtitleError.failed("l'audio di \(media.lastPathComponent) non è leggibile") }
+        guard a.terminationStatus == 0 else { throw SubtitleError.failed(TF("l'audio di %@ non è leggibile", media.lastPathComponent)) }
 
         var base = outputDir.appendingPathComponent(media.deletingPathExtension().lastPathComponent)
         var n = 2

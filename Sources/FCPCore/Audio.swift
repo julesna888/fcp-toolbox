@@ -29,7 +29,7 @@ extension Doctor {
         p.waitUntilExit()
         let log = String(decoding: data, as: UTF8.self)
         guard p.terminationStatus == 0, log.contains("Summary:") else {
-            throw MediaError.unreadable("\(url.lastPathComponent) (nessuna traccia audio?)")
+            throw MediaError.unreadable(TF("%@ (nessuna traccia audio?)", url.lastPathComponent))
         }
         return parseAudioLevels(log)
     }
@@ -63,23 +63,23 @@ extension Doctor {
         }
         let v = String(format: "%.1f", lufs)
         if lufs < -18 {
-            add("Volume", false, "Volume basso (\(v) LUFS): sul telefono si sente poco. Alza l'audio verso -14.")
+            add("Volume", false, TF("Volume basso (%@ LUFS): sul telefono si sente poco. Alza l'audio verso -14.", v))
         } else if lufs > -9 {
-            add("Volume", false, "Volume molto alto (\(v) LUFS): le piattaforme lo abbassano o distorce. Abbassa verso -14.")
+            add("Volume", false, TF("Volume molto alto (%@ LUFS): le piattaforme lo abbassano o distorce. Abbassa verso -14.", v))
         } else {
-            add("Volume", true, "Volume \(v) LUFS: nella zona giusta (obiettivo circa -14).")
+            add("Volume", true, TF("Volume %@ LUFS: nella zona giusta (obiettivo circa -14).", v))
         }
         if let peak = a.truePeak, peak > -1 {
-            add("Picco", false, "Picco \(String(format: "%.1f", peak)) dB: rischio di distorsione. Tieni il picco sotto -1 dB.")
+            add("Picco", false, TF("Picco %@ dB: rischio di distorsione. Tieni il picco sotto -1 dB.", String(format: "%.1f", peak)))
         }
         for s in a.silences {
             let t = String(format: "%.1f", s.duration)
             if s.start < 0.2 {
-                add("Silenzio", false, "Silenzio di \(t) s all'inizio: taglialo.")
+                add("Silenzio", false, TF("Silenzio di %@ s all'inizio: taglialo.", t))
             } else if s.start + s.duration > duration - 0.3 {
-                add("Silenzio", false, "Silenzio di \(t) s alla fine: taglialo.")
+                add("Silenzio", false, TF("Silenzio di %@ s alla fine: taglialo.", t))
             } else {
-                add("Silenzio", false, "Silenzio di \(t) s a \(String(format: "%.0f", s.start)) s: controlla che sia voluto.")
+                add("Silenzio", false, TF("Silenzio di %@ s a %@ s: controlla che sia voluto.", t, String(format: "%.0f", s.start)))
             }
         }
         return out

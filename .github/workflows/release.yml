@@ -17,6 +17,8 @@ jobs:
       - name: Install ffmpeg (some tests read real video)
         run: brew install ffmpeg
       - name: Test
+        env:
+          FCP_LANG: it
         run: swift test
       - name: Build app and dmg
         if: startsWith(github.ref, 'refs/tags/v')

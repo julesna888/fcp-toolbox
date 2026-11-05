@@ -5,7 +5,7 @@ import SwiftUI
 /// Opens the system file/folder chooser.
 @MainActor func chooseItems(folders: Bool, message: String) -> [URL] {
     let p = NSOpenPanel()
-    p.message = message
+    p.message = L(message)
     p.canChooseFiles = !folders
     p.canChooseDirectories = folders
     p.allowsMultipleSelection = !folders
@@ -34,8 +34,8 @@ struct DropBox: View {
     var body: some View {
         VStack(spacing: 8) {
             Image(systemName: "arrow.down.doc").font(.title)
-            Text(title).font(.headline)
-            Button(button, action: onPick)
+            Text(L(title)).font(.headline)
+            Button(L(button), action: onPick)
         }
         .frame(maxWidth: .infinity, minHeight: 110)
         .background(targeted ? Theme.panelHigh : Color.clear, in: RoundedRectangle(cornerRadius: 12))
@@ -58,7 +58,7 @@ struct InfoPane: View {
             DropBox(title: "Trascina qui uno o più video per vedere tutti i dati", button: "Scegli file…",
                     onURLs: load, onPick: { load(chooseItems(folders: false, message: "Quali file controllo?")) }, preload: initialURLs)
             if busy { ProgressView().controlSize(.small) }
-            ForEach(errors, id: \.self) { Text($0).foregroundStyle(Theme.orange) }
+            ForEach(errors, id: \.self) { Text(L($0)).foregroundStyle(Theme.orange) }
             ForEach(infos) { InfoCard(info: $0) }
         }
     }
@@ -72,7 +72,7 @@ struct InfoPane: View {
                 let r = await Task.detached { Result { try Doctor.probeMedia(f) } }.value
                 switch r {
                 case .success(let i): infos.append(i)
-                case .failure: errors.append("\(f.lastPathComponent): non è un file video o audio che riesco a leggere.")
+                case .failure: errors.append(LF("%@: non è un file video o audio che riesco a leggere.", f.lastPathComponent))
                 }
             }
             busy = false
@@ -89,8 +89,8 @@ struct InfoCard: View {
     }
     private func row(_ k: String, _ v: String) -> some View {
         HStack(alignment: .firstTextBaseline) {
-            Text(k).foregroundStyle(.secondary).frame(width: 130, alignment: .leading)
-            Text(v).textSelection(.enabled)
+            Text(L(k)).foregroundStyle(.secondary).frame(width: 130, alignment: .leading)
+            Text(L(v)).textSelection(.enabled)
             Spacer()
         }
     }
@@ -102,33 +102,33 @@ struct InfoCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 5) {
             HStack {
-                Text(info.url.lastPathComponent).font(.headline).lineLimit(1)
+                Text(L(info.url.lastPathComponent)).font(.headline).lineLimit(1)
                 Spacer()
-                Button("Mostra nel Finder") { NSWorkspace.shared.activateFileViewerSelecting([info.url]) }
+                Button(L("Mostra nel Finder")) { NSWorkspace.shared.activateFileViewerSelecting([info.url]) }
             }
             row("Durata", time(info.duration))
-            row("Spazio occupato", "\(formatBytes(onDisk)) (\(formatBytes(info.size)) di dati)")
+            row("Spazio occupato", LF("%@ (%@ di dati)", formatBytes(onDisk), formatBytes(info.size)))
             row("Contenitore", info.container)
             row("Bitrate totale", mbps(info.bitrate))
             if let v = info.video {
                 Divider()
                 row("Codec video", v.codec + (v.profile.isEmpty ? "" : " · \(v.profile)"))
-                row("Risoluzione", "\(v.displayWidth)×\(v.displayHeight)" + (v.rotation != 0 ? " (ruotato di \(v.rotation)°)" : ""))
+                row("Risoluzione", "\(v.displayWidth)×\(v.displayHeight)" + (v.rotation != 0 ? LF(" (ruotato di %@°)", v.rotation) : ""))
                 row("Aspect ratio", Doctor.simplifiedRatio(width: v.displayWidth, height: v.displayHeight))
-                row("Fps reali", String(format: "%g", v.fps) + (v.isVFR ? " · variabile (stima)" : " · fissi"))
+                row("Fps reali", String(format: "%g", v.fps) + (v.isVFR ? L(" · variabile (stima)") : L(" · fissi")))
                 row("Bitrate video", mbps(v.bitrate))
                 row("Colore", "\(v.bitDepth) bit · \(v.chroma)" + (v.colorSpace.isEmpty ? "" : " · \(v.colorSpace)") + (v.isHDR ? " · HDR" : ""))
             }
             ForEach(Array(info.audio.enumerated()), id: \.offset) { i, a in
                 if i == 0 { Divider() }
                 row(info.audio.count > 1 ? "Audio \(i + 1)" : "Audio",
-                    "\(a.codec) · \(a.channels) canali · \(a.sampleRate) Hz · \(mbps(a.bitrate))")
+                    LF("%@ · %@ canali · %@ Hz · %@", a.codec, a.channels, a.sampleRate, mbps(a.bitrate)))
             }
             if !info.tags.isEmpty {
                 Divider()
                 ForEach(info.tags.sorted(by: { $0.key < $1.key }), id: \.key) { row($0.key, $0.value) }
             }
-            if info.video == nil && info.audio.isEmpty { Text("Nessuna traccia video o audio trovata.").foregroundStyle(Theme.orange) }
+            if info.video == nil && info.audio.isEmpty { Text(L("Nessuna traccia video o audio trovata.")).foregroundStyle(Theme.orange) }
         }
         .card()
     }
@@ -162,58 +162,58 @@ struct BatchRenamePane: View {
             if !files.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack {
-                        TextField("Prima del nome", text: $prefix).textFieldStyle(.roundedBorder)
-                        TextField("Modello", text: $template).textFieldStyle(.roundedBorder).frame(minWidth: 220)
-                        TextField("Dopo il nome", text: $suffix).textFieldStyle(.roundedBorder)
+                        TextField(L("Prima del nome"), text: $prefix).textFieldStyle(.roundedBorder)
+                        TextField(L("Modello"), text: $template).textFieldStyle(.roundedBorder).frame(minWidth: 220)
+                        TextField(L("Dopo il nome"), text: $suffix).textFieldStyle(.roundedBorder)
                     }
                     HStack {
-                        Text("Inserisci:").foregroundStyle(.secondary)
+                        Text(L("Inserisci:")).foregroundStyle(.secondary)
                         ForEach(["{name}", "{n:3}", "{date}", "{date:yyyyMMdd}"], id: \.self) { t in
                             Button(t) { template += t }.buttonStyle(.bordered).controlSize(.small)
                         }
-                        Stepper("Parti da \(startAt)", value: $startAt, in: 0...9999).fixedSize()
+                        Stepper(LF("Parti da %@", startAt), value: $startAt, in: 0...9999).fixedSize()
                     }
                     HStack {
-                        TextField("Cerca", text: $find).textFieldStyle(.roundedBorder)
-                        TextField("Sostituisci con", text: $replace).textFieldStyle(.roundedBorder)
+                        TextField(L("Cerca"), text: $find).textFieldStyle(.roundedBorder)
+                        TextField(L("Sostituisci con"), text: $replace).textFieldStyle(.roundedBorder)
                     }
-                    Text("{name} = nome attuale · {n:3} = numero progressivo di 3 cifre (001, 002…) · {date} = data del file. L'estensione resta uguale.")
+                    Text(L("{name} = nome attuale · {n:3} = numero progressivo di 3 cifre (001, 002…) · {date} = data del file. L'estensione resta uguale."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
                 .card()
                 VStack(alignment: .leading, spacing: 4) {
                     ForEach(steps.prefix(200)) { s in
                         HStack {
-                            Text(s.from.lastPathComponent).lineLimit(1).foregroundStyle(.secondary)
+                            Text(L(s.from.lastPathComponent)).lineLimit(1).foregroundStyle(.secondary)
                             Image(systemName: "arrow.right").font(.caption)
-                            Text(s.to.lastPathComponent).lineLimit(1)
+                            Text(L(s.to.lastPathComponent)).lineLimit(1)
                             Spacer()
-                            if let c = s.conflict { Text(c).font(.caption).foregroundStyle(Theme.orange) }
+                            if let c = s.conflict { Text(L(c)).font(.caption).foregroundStyle(Theme.orange) }
                         }
                     }
-                    if steps.count > 200 { Text("…e altri \(steps.count - 200) file (vengono rinominati tutti).").foregroundStyle(.secondary) }
+                    if steps.count > 200 { Text(LF("…e altri %@ file (vengono rinominati tutti).", steps.count - 200)).foregroundStyle(.secondary) }
                 }
                 .card()
-                Button("Rinomina \(ok.count) file") { confirm = true }
+                Button(LF("Rinomina %@ file", ok.count)) { confirm = true }
                     .buttonStyle(.borderedProminent).disabled(ok.isEmpty)
             }
             if Doctor.lastMoveLabel() != nil {
-                Button("Annulla l'ultima rinomina") {
+                Button(L("Annulla l'ultima rinomina")) {
                     let r = Doctor.undoLastMoves()
-                    message = "Ripristinati \(r.restored) file." + (r.failures.isEmpty ? "" : " Non riuscito: \(r.failures.joined(separator: "; "))")
+                    message = LF("Ripristinati %@ file.", r.restored) + (r.failures.isEmpty ? "" : " " + LF("Non riuscito: %@", r.failures.joined(separator: "; ")))
                     files = []
                 }
             }
-            if let message { Text(message).foregroundStyle(Theme.green) }
+            if let message { Text(L(message)).foregroundStyle(Theme.green) }
         }
-        .confirmationDialog("Rinomino \(ok.count) file?", isPresented: $confirm) {
-            Button("Rinomina") {
+        .confirmationDialog(LF("Rinomino %@ file?", ok.count), isPresented: $confirm) {
+            Button(L("Rinomina")) {
                 let r = Doctor.applyMoves(ok, label: "Rinomina \(ok.count) file")
-                message = "Rinominati \(r.done) file. Puoi annullare con «Annulla l'ultima rinomina»." + (r.failures.isEmpty ? "" : " Non riusciti: \(r.failures.joined(separator: "; "))")
+                message = LF("Rinominati %@ file. Puoi annullare con «Annulla l'ultima rinomina».", r.done) + (r.failures.isEmpty ? "" : " " + LF("Non riusciti: %@", r.failures.joined(separator: "; ")))
                 files = []
             }
         } message: {
-            Text("I file restano nella stessa cartella con il nuovo nome. Puoi annullare subito dopo.")
+            Text(L("I file restano nella stessa cartella con il nuovo nome. Puoi annullare subito dopo."))
         }
     }
 }
@@ -231,24 +231,24 @@ struct RatioPane: View {
         target == "Altro" ? customW / max(customH, 0.1) : Doctor.ratioPresets.first { $0.name == target }?.value ?? 1
     }
     private func line(_ k: String, _ v: String) -> some View {
-        HStack { Text(k).foregroundStyle(.secondary).frame(width: 190, alignment: .leading); Text(v).textSelection(.enabled); Spacer() }
+        HStack { Text(L(k)).foregroundStyle(.secondary).frame(width: 190, alignment: .leading); Text(L(v)).textSelection(.enabled); Spacer() }
     }
 
     var body: some View {
         let r = Doctor.reframe(width: w, height: h, to: ratio)
         VStack(alignment: .leading, spacing: 12) {
             HStack {
-                Text("Il tuo video è").foregroundStyle(.secondary)
+                Text(L("Il tuo video è")).foregroundStyle(.secondary)
                 TextField("", value: $w, format: .number.grouping(.never)).frame(width: 70).textFieldStyle(.roundedBorder)
-                Text("×")
+                Text(L("×"))
                 TextField("", value: $h, format: .number.grouping(.never)).frame(width: 70).textFieldStyle(.roundedBorder)
                 Text("(\(Doctor.simplifiedRatio(width: w, height: h)))").foregroundStyle(.secondary)
             }
             HStack {
-                Text("Voglio").foregroundStyle(.secondary)
+                Text(L("Voglio")).foregroundStyle(.secondary)
                 Picker("", selection: $target) {
-                    ForEach(Doctor.ratioPresets) { Text($0.name).tag($0.name) }
-                    Text("Altro").tag("Altro")
+                    ForEach(Doctor.ratioPresets) { Text(L($0.name)).tag($0.name) }
+                    Text(L("Altro")).tag("Altro")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 380)
                 if target == "Altro" {
@@ -259,23 +259,23 @@ struct RatioPane: View {
             }
             if let r {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Riempi il quadro (taglia i bordi)").font(.headline)
+                    Text(L("Riempi il quadro (taglia i bordi)")).font(.headline)
                     line("Misura", "\(r.fillWidth)×\(r.fillHeight)")
-                    line("Si taglia", r.cutShare < 0.0005 ? "niente: stessa forma" : String(format: "%.0f%% dell'immagine", r.cutShare * 100))
-                    line("Ritaglio da", "\(r.cropX) px da sinistra, \(r.cropY) px dall'alto")
-                    Text("Tutta l'immagine, con barre").font(.headline).padding(.top, 6)
+                    line("Si taglia", r.cutShare < 0.0005 ? L("niente: stessa forma") : LF("%@% dell'immagine", String(format: "%.0f", r.cutShare * 100)))
+                    line("Ritaglio da", LF("%@ px da sinistra, %@ px dall'alto", r.cropX, r.cropY))
+                    Text(L("Tutta l'immagine, con barre")).font(.headline).padding(.top, 6)
                     line("Tela", "\(r.fitWidth)×\(r.fitHeight)")
-                    Text("Nessuna delle due deforma l'immagine: o la tagli, o aggiungi barre.").font(.caption).foregroundStyle(.secondary)
+                    Text(L("Nessuna delle due deforma l'immagine: o la tagli, o aggiungi barre.")).font(.caption).foregroundStyle(.secondary)
                 }
                 .card()
             }
             VStack(alignment: .leading, spacing: 6) {
-                Text("Misure di uscita con questa proporzione").font(.headline)
+                Text(L("Misure di uscita con questa proporzione")).font(.headline)
                 ForEach([1080, 1920, 3840], id: \.self) { width in
-                    if let s = Doctor.size(ratio: ratio, width: width) { line("Larghezza \(width)", "\(s.width)×\(s.height)") }
+                    if let s = Doctor.size(ratio: ratio, width: width) { line(LF("Larghezza %@", width), "\(s.width)×\(s.height)") }
                 }
                 ForEach([720, 1080, 2160], id: \.self) { height in
-                    if let s = Doctor.size(ratio: ratio, height: height) { line("Altezza \(height)", "\(s.width)×\(s.height)") }
+                    if let s = Doctor.size(ratio: ratio, height: height) { line(LF("Altezza %@", height), "\(s.width)×\(s.height)") }
                 }
             }
             .card()

@@ -176,7 +176,7 @@ public enum Doctor {
         var result = CleanResult()
         for item in items {
             guard isSafeToEmpty(item) else {
-                result.failures.append("\(item.label): saltata per sicurezza")
+                result.failures.append(TF("%@: saltata per sicurezza", item.label))
                 continue
             }
             do {

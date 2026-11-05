@@ -25,21 +25,21 @@ struct FreeSpaceView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Libera spazio")
+        .navigationTitle(L("Libera spazio"))
         .onAppear {
             model.includeAnalysis = false  // analysis files only when asked, here and now
             pickDefaultDisk()
         }
         .onChange(of: model.volumes) { _, _ in pickDefaultDisk() }  // the list loads after the screen appears
-        .confirmationDialog("Svuotare render e proxy?", isPresented: $confirmClean, titleVisibility: .visible) {
-            Button("Svuota e libera \(formatBytes(model.freeable))", role: .destructive) { model.clean() }
+        .confirmationDialog(L("Svuotare render e proxy?"), isPresented: $confirmClean, titleVisibility: .visible) {
+            Button(LF("Svuota e libera %@", formatBytes(model.freeable)), role: .destructive) { model.clean() }
         } message: {
-            Text("Final Cut li rigenera da solo, ma su un disco lento ci vuole tempo. Originali e backup non vengono toccati.")
+            Text(L("Final Cut li rigenera da solo, ma su un disco lento ci vuole tempo. Originali e backup non vengono toccati."))
         }
-        .confirmationDialog("Spostare \(oldBackups.count) backup nel Cestino?", isPresented: $confirmBackups, titleVisibility: .visible) {
-            Button("Cestina \(formatBytes(oldBackupBytes))", role: .destructive) { model.trashItems(oldBackups.map(\.url)) }
+        .confirmationDialog(LF("Spostare %@ backup nel Cestino?", oldBackups.count), isPresented: $confirmBackups, titleVisibility: .visible) {
+            Button(LF("Cestina %@", formatBytes(oldBackupBytes)), role: .destructive) { model.trashItems(oldBackups.map(\.url)) }
         } message: {
-            Text("Restano i 3 backup più recenti di ogni cartella.")
+            Text(L("Restano i 3 backup più recenti di ogni cartella."))
         }
     }
 
@@ -50,19 +50,19 @@ struct FreeSpaceView: View {
 
     private var picker: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Da quale disco vuoi liberare spazio?").font(.title3.bold())
-            Text("Cerco solo cose di Final Cut. Non tocco i tuoi media in uso né i progetti.").foregroundStyle(.secondary)
+            Text(L("Da quale disco vuoi liberare spazio?")).font(.title3.bold())
+            Text(L("Cerco solo cose di Final Cut. Non tocco i tuoi media in uso né i progetti.")).foregroundStyle(.secondary)
             HStack {
-                Picker("Disco", selection: $disk) {
-                    ForEach(model.volumes) { v in Text("\(v.name) · liberi \(formatBytes(v.free))").tag(Optional(v.id)) }
+                Picker(L("Disco"), selection: $disk) {
+                    ForEach(model.volumes) { v in Text(LF("%@ · liberi %@", v.name, formatBytes(v.free))).tag(Optional(v.id)) }
                 }
                 .labelsHidden().fixedSize()
-                Button(scanned ? "Rifai la ricerca" : "Cerca file inutili") {
+                Button(scanned ? L("Rifai la ricerca") : L("Cerca file inutili")) {
                     guard let v = volume else { return }
                     if model.roots == [v.url] { model.rescan() } else { model.roots = [v.url]; model.rescan() }
                 }
                 .disabled(volume == nil || model.busy)
-                if model.busy { ProgressView().controlSize(.small); Text(model.status).foregroundStyle(.secondary) }
+                if model.busy { ProgressView().controlSize(.small); Text(L(model.status)).foregroundStyle(.secondary) }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -77,23 +77,23 @@ struct FreeSpaceView: View {
                 line("Backup automatici vecchi (tengo gli ultimi 3)", oldBackupBytes,
                      button: "Cestina…", enabled: oldBackupBytes > 0) { confirmBackups = true }
                 if safeBytes == 0 && oldBackupBytes == 0 {
-                    Text("Niente da togliere in modo sicuro su questo disco.").foregroundStyle(.secondary)
+                    Text(L("Niente da togliere in modo sicuro su questo disco.")).foregroundStyle(.secondary)
                 }
             }
             section(title: "Da rivedere tu", tint: Theme.orange) {
                 Toggle(isOn: $model.includeAnalysis) {
-                    HStack { Text("File di analisi (si rigenerano, ma possono volerci ore)"); Spacer(); Text(formatBytes(analysisBytes)).monospacedDigit() }
+                    HStack { Text(L("File di analisi (si rigenerano, ma possono volerci ore)")); Spacer(); Text(formatBytes(analysisBytes)).monospacedDigit() }
                 }
                 .disabled(analysisBytes == 0)
                 line("Media non usati da nessuna libreria", model.report?.orphanSize ?? 0,
                      button: "Rivedi…", enabled: (model.report?.orphans.count ?? 0) > 0) { model.requestedTool = .orphans }
                 if let names = model.report?.libraryNames, !names.isEmpty {
-                    Text("Controllati contro: \(names.joined(separator: ", ")). Se usi altre librerie, aggiungile prima.")
+                    Text(LF("Controllati contro: %@. Se usi altre librerie, aggiungile prima.", names.joined(separator: ", ")))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
             if volume?.internalDisk == false {
-                Label("Su un disco esterno il Cestino non libera spazio finché non lo svuoti.", systemImage: "trash")
+                Label(L("Su un disco esterno il Cestino non libera spazio finché non lo svuoti."), systemImage: "trash")
                     .foregroundStyle(.secondary)
             }
         }
@@ -101,7 +101,7 @@ struct FreeSpaceView: View {
 
     private func section<C: View>(title: String, tint: Color, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title.uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.8).foregroundStyle(tint)
+            Text(L(title).uppercased()).font(.system(size: 11, weight: .semibold)).tracking(0.8).foregroundStyle(tint)
             content()
         }
         .card()
@@ -109,10 +109,10 @@ struct FreeSpaceView: View {
 
     private func line(_ title: String, _ size: Int64, button: String, enabled: Bool, action: @escaping () -> Void) -> some View {
         HStack {
-            Text(title)
+            Text(L(title))
             Spacer()
             Text(formatBytes(size)).monospacedDigit().foregroundStyle(.secondary).frame(width: 90, alignment: .trailing)
-            Button(button, action: action).disabled(!enabled || model.busy)
+            Button(L(button), action: action).disabled(!enabled || model.busy)
         }
     }
 }

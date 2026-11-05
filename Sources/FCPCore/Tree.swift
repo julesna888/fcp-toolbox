@@ -65,7 +65,7 @@ extension Doctor {
         for url in urls {
             let path = url.standardizedFileURL.path
             guard prefixes.contains(where: { path.hasPrefix($0) }), fm.fileExists(atPath: path) else {
-                result.failures.append("\(url.lastPathComponent): fuori dalle cartelle aggiunte, saltato")
+                result.failures.append(TF("%@: fuori dalle cartelle aggiunte, saltato", url.lastPathComponent))
                 continue
             }
             let size = diskSize(url) + ((try? url.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) == true ? allocated(url) : 0)

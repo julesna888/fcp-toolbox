@@ -52,7 +52,7 @@ public enum MediaError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .noFFprobe: return "ffprobe non trovato. Installalo con Homebrew (brew install ffmpeg)."
-        case .unreadable(let n): return "Impossibile leggere \(n)."
+        case .unreadable(let n): return TF("Impossibile leggere %@.", n)
         }
     }
 }

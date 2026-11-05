@@ -51,12 +51,12 @@ public struct BatchItem: Identifiable, Equatable, Sendable {
 
     public var summary: String {
         let c = counts
-        if isRunning { return "In corso: \(c.done + c.failed) di \(items.count)" }
+        if isRunning { return TF("In corso: %@ di %@", c.done + c.failed, items.count) }
         if items.isEmpty { return "La coda è vuota." }
         var parts: [String] = []
         if c.done > 0 { parts.append("\(c.done) riusciti") }
-        if c.failed > 0 { parts.append("\(c.failed) con errore") }
-        if c.waiting > 0 { parts.append("\(c.waiting) in attesa") }
+        if c.failed > 0 { parts.append(TF("%@ con errore", c.failed)) }
+        if c.waiting > 0 { parts.append(TF("%@ in attesa", c.waiting)) }
         return (c.waiting == 0 ? "Finito: " : "Fermo: ") + parts.joined(separator: ", ") + "."
     }
 

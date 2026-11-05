@@ -15,30 +15,30 @@ struct HealthView: View {
 
     var body: some View {
         if model.realLibraries.isEmpty {
-            ContentUnavailableView("Nessuna libreria", systemImage: "heart.text.square",
-                description: Text("Aggiungi il disco con le tue librerie Final Cut: poi qui vedi quanto sono in salute."))
+            ContentUnavailableView(L("Nessuna libreria"), systemImage: "heart.text.square",
+                description: Text(L("Aggiungi il disco con le tue librerie Final Cut: poi qui vedi quanto sono in salute.")))
         } else {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     header
                     if let report { indicators(report) }
-                    if let forecast { Text(forecast).foregroundStyle(.secondary).card() }
+                    if let forecast { Text(L(forecast)).foregroundStyle(.secondary).card() }
                     perfCard
                 }
                 .padding(16)
             }
-            .navigationTitle("Salute libreria")
+            .navigationTitle(L("Salute libreria"))
             .onAppear { load() }
             .onChange(of: index) { _, _ in load() }
-            .toolbar { Button { load() } label: { Label("Ricontrolla", systemImage: "arrow.clockwise") } }
+            .toolbar { Button { load() } label: { Label(L("Ricontrolla"), systemImage: "arrow.clockwise") } }
         }
     }
 
     private var header: some View {
         VStack(alignment: .leading, spacing: 8) {
             if model.realLibraries.count > 1 {
-                Picker("Libreria", selection: $index) {
-                    ForEach(Array(model.realLibraries.enumerated()), id: \.offset) { Text($0.element.name).tag($0.offset) }
+                Picker(L("Libreria"), selection: $index) {
+                    ForEach(Array(model.realLibraries.enumerated()), id: \.offset) { Text(L($0.element.name)).tag($0.offset) }
                 }
                 .frame(maxWidth: 360)
             }
@@ -47,11 +47,11 @@ struct HealthView: View {
                     .font(.system(size: 54, weight: .semibold, design: .rounded)).monospacedDigit()
                     .foregroundStyle(color(report?.score))
                 VStack(alignment: .leading) {
-                    Text(loading ? "Controllo…" : report?.label ?? "").font(.title2.bold())
-                    Text("voto complessivo su 100").foregroundStyle(.secondary)
+                    Text(loading ? L("Controllo…") : L(report?.label ?? "")).font(.title2.bold())
+                    Text(L("voto complessivo su 100")).foregroundStyle(.secondary)
                 }
             }
-            if let report { Text(report.note).font(.caption).foregroundStyle(.secondary) }
+            if let report { Text(L(report.note)).font(.caption).foregroundStyle(.secondary) }
         }
     }
 
@@ -62,12 +62,12 @@ struct HealthView: View {
                     Image(systemName: icon(i.score)).foregroundStyle(color(i.score))
                     VStack(alignment: .leading, spacing: 2) {
                         HStack {
-                            Text(i.name).font(.headline)
-                            Text("peso \(i.weight)%").font(.caption).foregroundStyle(.secondary)
+                            Text(L(i.name)).font(.headline)
+                            Text(LF("peso %@%", i.weight)).font(.caption).foregroundStyle(.secondary)
                         }
-                        Text(i.detail).foregroundStyle(.secondary)
-                        if let a = i.advice { Text(a) }
-                        if let (tool, label) = fix(for: i) { Button(label) { model.requestedTool = tool } }
+                        Text(L(i.detail)).foregroundStyle(.secondary)
+                        if let a = i.advice { Text(L(a)) }
+                        if let (tool, label) = fix(for: i) { Button(L(label)) { model.requestedTool = tool } }
                     }
                     Spacer()
                     Text(i.score.map { "\($0)" } ?? "n.d.").font(.title3.bold()).monospacedDigit().foregroundStyle(color(i.score))
@@ -82,9 +82,9 @@ struct HealthView: View {
     private var perfCard: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text("Come va il Mac mentre monti").font(.headline)
+                Text(L("Come va il Mac mentre monti")).font(.headline)
                 Spacer()
-                Button("Misura ora") {
+                Button(L("Misura ora")) {
                     Task {
                         await Task.detached(priority: .utility) { _ = Doctor.sample() }.value
                         load()
@@ -92,14 +92,14 @@ struct HealthView: View {
                 }
             }
             if let p = perf {
-                ForEach(p.findings, id: \.self) { Text("• \($0)") }
-                if p.findings.isEmpty { Text("Nessun problema ricorrente su \(p.samples) misure.").foregroundStyle(.secondary) }
+                ForEach(p.findings, id: \.self) { Text("• " + L($0)) }
+                if p.findings.isEmpty { Text(LF("Nessun problema ricorrente su %@ misure.", p.samples)).foregroundStyle(.secondary) }
             } else {
-                Text("Nessuna misura ancora.").foregroundStyle(.secondary)
+                Text(L("Nessuna misura ancora.")).foregroundStyle(.secondary)
             }
-            Toggle("Misura da sola ogni 5 minuti, solo mentre Final Cut è aperto", isOn: $perfOn)
+            Toggle(L("Misura da sola ogni 5 minuti, solo mentre Final Cut è aperto"), isOn: $perfOn)
                 .onChange(of: perfOn) { _, v in AutomationRunner.perfMonitorEnabled = v }
-            Text("Sono misure del Mac in uso, non un test di velocità di Final Cut.").font(.caption).foregroundStyle(.secondary)
+            Text(L("Sono misure del Mac in uso, non un test di velocità di Final Cut.")).font(.caption).foregroundStyle(.secondary)
         }
         .card()
     }
@@ -136,7 +136,7 @@ struct HealthView: View {
                 let r = Doctor.health(of: lib)
                 let free = Doctor.probe([lib.url]).free
                 let g = Doctor.growth(of: lib.url.path)
-                let f = [g.map { "Crescita misurata: \($0.text)." }, free.flatMap { Doctor.predictSpace(free: $0, growth: g) }]
+                let f = [g.map { LF("Crescita misurata: %@.", L($0.text)) }, free.flatMap { Doctor.predictSpace(free: $0, growth: g) }]
                     .compactMap { $0 }.joined(separator: " ")
                 let forecast: String? = f.isEmpty ? nil : f
                 let samples = Doctor.perfHistory()
@@ -161,49 +161,49 @@ struct AutomationsView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Toggle("Avvisi automatici attivi", isOn: $config.enabled).font(.title3.bold())
-                    Text("Ogni 10 minuti controllo le regole accese e ti avviso con una notifica. Gli avvisi non cambiano e non cancellano nessun file. Spente, non faccio niente.")
+                    Toggle(L("Avvisi automatici attivi"), isOn: $config.enabled).font(.title3.bold())
+                    Text(L("Ogni 10 minuti controllo le regole accese e ti avviso con una notifica. Gli avvisi non cambiano e non cancellano nessun file. Spente, non faccio niente."))
                         .foregroundStyle(.secondary)
                 }
                 .card()
                 VStack(alignment: .leading, spacing: 10) {
-                    Toggle("Avvisami se lo spazio libero scende sotto", isOn: $config.lowSpace)
-                    Stepper("\(config.lowSpaceGB) GB", value: $config.lowSpaceGB, in: 5...500, step: 5).padding(.leading, 22).disabled(!config.lowSpace)
+                    Toggle(L("Avvisami se lo spazio libero scende sotto"), isOn: $config.lowSpace)
+                    Stepper(LF("%@ GB", config.lowSpaceGB), value: $config.lowSpaceGB, in: 5...500, step: 5).padding(.leading, 22).disabled(!config.lowSpace)
                     Divider()
-                    Toggle("Ricordami il backup quando è vecchio di", isOn: $config.backupReminder)
-                    Stepper("\(config.backupDays) giorni", value: $config.backupDays, in: 1...90).padding(.leading, 22).disabled(!config.backupReminder)
+                    Toggle(L("Ricordami il backup quando è vecchio di"), isOn: $config.backupReminder)
+                    Stepper(LF("%@ giorni", config.backupDays), value: $config.backupDays, in: 1...90).padding(.leading, 22).disabled(!config.backupReminder)
                     Divider()
-                    Toggle("Avvisami se Final Cut va in crash", isOn: $config.crashWatch)
+                    Toggle(L("Avvisami se Final Cut va in crash"), isOn: $config.crashWatch)
                     Divider()
-                    Toggle("Scrivi un report di salute una volta a settimana", isOn: $config.weeklyReport)
+                    Toggle(L("Scrivi un report di salute una volta a settimana"), isOn: $config.weeklyReport)
                     Divider()
-                    Toggle("Controlla i nuovi export in una cartella", isOn: Binding(
+                    Toggle(L("Controlla i nuovi export in una cartella"), isOn: Binding(
                         get: { config.deliveryFolder != nil }, set: { on in if on { picking = true } else { config.deliveryFolder = nil } }))
                     if let f = config.deliveryFolder {
                         HStack {
-                            Text(f).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
-                            Picker("Profilo", selection: $config.deliveryProfile) { ForEach(profiles, id: \.self) { Text($0) } }.fixedSize()
+                            Text(L(f)).lineLimit(1).truncationMode(.middle).foregroundStyle(.secondary)
+                            Picker(L("Profilo"), selection: $config.deliveryProfile) { ForEach(profiles, id: \.self) { Text(L($0)) } }.fixedSize()
                         }
                     }
                 }
                 .card()
                 .disabled(!config.enabled)
                 HStack {
-                    Button("Controlla adesso") {
+                    Button(L("Controlla adesso")) {
                         Task { events = await AutomationRunner.tick(); checked = true }
                     }
                     .disabled(!config.enabled)
-                    if checked { Text(events.isEmpty ? "Tutto a posto." : "\(events.count) avvisi.").foregroundStyle(.secondary) }
+                    if checked { Text(events.isEmpty ? L("Tutto a posto.") : LF("%@ avvisi.", events.count)).foregroundStyle(.secondary) }
                 }
                 ForEach(events, id: \.key) { e in
-                    VStack(alignment: .leading, spacing: 2) { Text(e.title).font(.headline); Text(e.body).foregroundStyle(.secondary) }.card()
+                    VStack(alignment: .leading, spacing: 2) { Text(L(e.title)).font(.headline); Text(L(e.body)).foregroundStyle(.secondary) }.card()
                 }
                 // one-time setup, so it lives with the other settings and not under the tools
                 QuickActionsCard()
             }
             .padding(16)
         }
-        .navigationTitle("Avvisi automatici")
+        .navigationTitle(L("Avvisi automatici"))
         .onChange(of: config) { old, new in
             Doctor.saveAutomationConfig(new)
             if new.enabled && !old.enabled { AutomationRunner.askPermission() }

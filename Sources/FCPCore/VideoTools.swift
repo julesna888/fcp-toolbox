@@ -52,7 +52,7 @@ extension Doctor {
     public static func trim(_ source: URL, start: Double, end: Double, precise: Bool) -> TrimResult {
         func fail(_ m: String) -> TrimResult { TrimResult(output: nil, problem: m) }
         guard let ffmpeg = ffmpegPath else { return fail("ffmpeg non trovato (brew install ffmpeg).") }
-        guard let info = try? probeMedia(source) else { return fail("Non riesco a leggere \(source.lastPathComponent).") }
+        guard let info = try? probeMedia(source) else { return fail(TF("Non riesco a leggere %@.", source.lastPathComponent)) }
         guard start >= 0, end > start, start < info.duration else { return fail("L'inizio deve venire prima della fine, dentro la durata della clip.") }
         let end = min(end, info.duration)
         var ext = source.pathExtension.lowercased()

@@ -22,21 +22,21 @@ struct FormatDiskSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Formatta un disco nuovo").font(.title2.bold())
+            Text(L("Formatta un disco nuovo")).font(.title2.bold())
             if !loaded {
                 ProgressView()
             } else if targets.isEmpty {
-                Text("Non vedo dischi esterni. Collega l'SSD o l'hard disk e riapri questa finestra. I dischi interni e quello di avvio non compaiono mai qui.")
+                Text(L("Non vedo dischi esterni. Collega l'SSD o l'hard disk e riapri questa finestra. I dischi interni e quello di avvio non compaiono mai qui."))
                     .foregroundStyle(.secondary)
             } else {
                 content
             }
             if let result {
-                Text(result).foregroundStyle(failed ? Theme.orange : Theme.green).textSelection(.enabled)
+                Text(L(result)).foregroundStyle(failed ? Theme.orange : Theme.green).textSelection(.enabled)
             }
             HStack {
                 Spacer()
-                Button("Chiudi") { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(L("Chiudi")) { dismiss() }.keyboardShortcut(.cancelAction)
             }
         }
         .padding(24)
@@ -47,39 +47,39 @@ struct FormatDiskSheet: View {
     }
 
     @ViewBuilder private var content: some View {
-        Picker("Disco", selection: $selected) {
+        Picker(L("Disco"), selection: $selected) {
             ForEach(targets) { t in
                 Text("\(t.name) · \(formatBytes(t.size)) · \(t.solidState ? "SSD" : "HDD")").tag(Optional(t.id))
             }
         }
         if let t = target {
             VStack(alignment: .leading, spacing: 4) {
-                Text(t.volumes.isEmpty ? "Nessun volume montato." : "Volumi: \(t.volumes.joined(separator: ", "))")
+                Text(t.volumes.isEmpty ? L("Nessun volume montato.") : LF("Volumi: %@", t.volumes.joined(separator: ", ")))
                 if t.used > 100_000_000 {
-                    Text("Contiene già \(formatBytes(t.used)) di dati. Verranno cancellati per sempre.")
+                    Text(LF("Contiene già %@ di dati. Verranno cancellati per sempre.", formatBytes(t.used)))
                         .foregroundStyle(Theme.orange).bold()
                 } else {
-                    Text("Il disco sembra vuoto.").foregroundStyle(.secondary)
+                    Text(L("Il disco sembra vuoto.")).foregroundStyle(.secondary)
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .card()
         }
-        Picker("Formato", selection: $format) {
-            ForEach(DiskFormat.allCases) { Text($0.title).tag($0) }
+        Picker(L("Formato"), selection: $format) {
+            ForEach(DiskFormat.allCases) { Text(L($0.title)).tag($0) }
         }
         .pickerStyle(.segmented)
-        Text(format.advice).font(.callout).foregroundStyle(.secondary)
-        TextField("Nome del disco", text: $name).textFieldStyle(.roundedBorder)
+        Text(L(format.advice)).font(.callout).foregroundStyle(.secondary)
+        TextField(L("Nome del disco"), text: $name).textFieldStyle(.roundedBorder)
         VStack(alignment: .leading, spacing: 6) {
-            Text("Questo cancella TUTTO sul disco e non si può annullare. Il Cestino non c'entra.")
+            Text(L("Questo cancella TUTTO sul disco e non si può annullare. Il Cestino non c'entra."))
                 .foregroundStyle(Theme.orange)
-            TextField("Scrivi CANCELLA per confermare", text: $confirm).textFieldStyle(.roundedBorder)
+            TextField(L("Scrivi CANCELLA per confermare"), text: $confirm).textFieldStyle(.roundedBorder)
         }
         HStack {
             if working { ProgressView().controlSize(.small) }
             Spacer()
-            Button("Cancella e formatta", role: .destructive) { run() }
+            Button(L("Cancella e formatta"), role: .destructive) { run() }
                 .buttonStyle(.borderedProminent).tint(Theme.orange)
                 .disabled(!canErase)
         }
@@ -105,7 +105,7 @@ struct FormatDiskSheet: View {
             switch outcome {
             case .success:
                 failed = false
-                result = "Fatto: “\(Doctor.sanitizedVolumeName(n))” è pronto in \(fmt.title). Puoi usarlo con Final Cut."
+                result = LF("Fatto: “%@” è pronto in %@. Puoi usarlo con Final Cut.", Doctor.sanitizedVolumeName(n), fmt.title)
                 confirm = ""
             case .failure(let e):
                 failed = true

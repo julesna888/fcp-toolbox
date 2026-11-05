@@ -4,25 +4,20 @@ import SwiftUI
 /// Text in the language the user picked (Italian is the source text in the code).
 func L(_ italian: String) -> String { Lang.tr(italian) }
 
+/// Same, for text with numbers or names inside: write "%@" where they go and pass them in order.
+func LF(_ italian: String, _ args: Any...) -> String { Translations.format(italian, args) }
+
 /// Flag button in the toolbar: shows the language you can switch TO.
 struct LangSwitch: View {
+    // watching the stored value makes the flag redraw by itself when it changes
+    @AppStorage(Lang.key) private var raw = ""
     var body: some View {
-        let to = Lang.current.other
-        Button { Lang.current = to } label: {
+        let to = (Lang(rawValue: raw) ?? Lang.current).other
+        Button { raw = to.rawValue } label: {
             Text(to.flag).font(.system(size: 20))
         }
-        .help(to == .en ? "Switch to English (only part of the app is translated so far)" : "Passa all'italiano")
+        .help(to == .en ? "Switch to English" : "Passa all'italiano")
         .accessibilityLabel(to == .en ? "Switch language to English" : "Cambia lingua in italiano")
     }
 }
 
-/// Shown in English on pages that are not translated yet, so nobody wonders why the text is Italian.
-struct UntranslatedBanner: View {
-    var body: some View {
-        Label("This page is still in Italian.", systemImage: "globe")
-            .font(.caption).foregroundStyle(.secondary)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 16).padding(.vertical, 6)
-            .background(Theme.panel)
-    }
-}

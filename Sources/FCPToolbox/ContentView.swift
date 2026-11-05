@@ -113,9 +113,6 @@ struct ContentView: View {
             .id(langRaw)
         } detail: {
             detail
-                .safeAreaInset(edge: .top, spacing: 0) {
-                    if langRaw == "en" && tool != .tools { UntranslatedBanner() }
-                }
                 .id(langRaw)
         }
         .frame(minWidth: 960, minHeight: 600)
@@ -134,7 +131,7 @@ struct ContentView: View {
         .onChange(of: model.openRequest, initial: true) { _, r in
             guard let r else { return }
             guard let t = Shell.sidebarTool(for: r.toolID) else {
-                model.notice = "Strumento non trovato: \(r.toolID)"; model.openRequest = nil; return
+                model.notice = LF("Strumento non trovato: %@", r.toolID); model.openRequest = nil; return
             }
             tool = t
             if !Shell.needsReceiver(r.toolID) { model.openRequest = nil }
@@ -146,33 +143,33 @@ struct ContentView: View {
             ToolbarItemGroup {
                 LangSwitch()
                 Button { model.showSearch = true } label: { Label(L("Cerca strumento"), systemImage: "magnifyingglass") }
-                    .help("Cerca uno strumento (⌘K)")
+                    .help(L("Cerca uno strumento (⌘K)"))
                 Button { showWelcome = true } label: { Label(L("Guida"), systemImage: "questionmark.circle") }
-                    .help("Rivedi la guida alle funzioni")
+                    .help(L("Rivedi la guida alle funzioni"))
                 // disk buttons only where a disk is involved: on the tools they only confused
                 if tool == .freeSpace || tool?.hidden ?? true {
                     if !model.roots.isEmpty {
                         Menu {
                             ForEach(model.roots, id: \.self) { url in
-                                Button("Rimuovi “\(url.lastPathComponent)”") { model.remove(url) }
+                                Button(LF("Rimuovi “%@”", url.lastPathComponent)) { model.remove(url) }
                             }
                         } label: {
-                            Label("Dischi analizzati", systemImage: "externaldrive")
+                            Label(L("Dischi analizzati"), systemImage: "externaldrive")
                         }
-                        .help("Dischi e cartelle analizzati")
+                        .help(L("Dischi e cartelle analizzati"))
                     }
-                    Button { model.picking = true } label: { Label("Aggiungi disco", systemImage: "plus") }
-                        .help("Aggiungi disco o cartella (⌘O)")
-                    Button { model.rescan() } label: { Label("Rifai analisi", systemImage: "arrow.clockwise") }
-                        .help("Rifai l'analisi (⌘R)")
+                    Button { model.picking = true } label: { Label(L("Aggiungi disco"), systemImage: "plus") }
+                        .help(L("Aggiungi disco o cartella (⌘O)"))
+                    Button { model.rescan() } label: { Label(L("Rifai analisi"), systemImage: "arrow.clockwise") }
+                        .help(L("Rifai l'analisi (⌘R)"))
                         .disabled(model.roots.isEmpty || model.busy)
                 }
             }
         }
-        .alert("FCP Toolbox", isPresented: Binding(
+        .alert(L("FCP Toolbox"), isPresented: Binding(
             get: { model.notice != nil }, set: { if !$0 { model.notice = nil } })
         ) {
-            Button("OK") {}
+            Button(L("OK")) {}
         } message: {
             Text(model.notice ?? "")
         }
@@ -226,11 +223,11 @@ struct ContentView: View {
             ManageView()
         } else if model.roots.isEmpty {
             ContentUnavailableView {
-                Label("Trascina qui il disco dei tuoi media", systemImage: "externaldrive")
+                Label(L("Trascina qui il disco dei tuoi media"), systemImage: "externaldrive")
             } description: {
-                Text("Ad esempio il tuo SSD esterno. Cerco la cartella “Final Cut Original Media” e le librerie (.fcpbundle) per dirti dove è finito lo spazio. Finché non confermi, non cancello niente.")
+                Text(L("Ad esempio il tuo SSD esterno. Cerco la cartella “Final Cut Original Media” e le librerie (.fcpbundle) per dirti dove è finito lo spazio. Finché non confermi, non cancello niente."))
             } actions: {
-                Button("Scegli…") { model.picking = true }
+                Button(L("Scegli…")) { model.picking = true }
             }
         } else {
             switch tool ?? .libraries {
@@ -271,12 +268,12 @@ struct CleanupView: View {
             Divider()
             footer
         }
-        .navigationTitle("Cache e render")
-        .confirmationDialog("Svuotare \(model.cleanable.count) cartelle?",
+        .navigationTitle(L("Cache e render"))
+        .confirmationDialog(LF("Svuotare %@ cartelle?", model.cleanable.count),
                             isPresented: $confirming, titleVisibility: .visible) {
-            Button("Svuota e libera \(formatBytes(model.freeable))", role: .destructive) { model.clean() }
+            Button(LF("Svuota e libera %@", formatBytes(model.freeable)), role: .destructive) { model.clean() }
         } message: {
-            Text("I media originali e i backup non vengono toccati. Final Cut dovrà rigenerare i render.")
+            Text(L("I media originali e i backup non vengono toccati. Final Cut dovrà rigenerare i render."))
         }
     }
 
@@ -295,12 +292,12 @@ struct CleanupView: View {
         let libs = model.realLibraries
         let total = libs.reduce(0) { $0 + $1.total }
         return VStack(alignment: .leading, spacing: 4) {
-            Text(libs.isEmpty ? "Nessuna libreria, solo backup automatici"
-                              : "\(libs.count) \(libs.count == 1 ? "libreria" : "librerie") · \(formatBytes(total))")
+            Text(libs.isEmpty ? L("Nessuna libreria, solo backup automatici")
+                              : "\(libs.count) \(libs.count == 1 ? L("libreria") : L("librerie")) · \(formatBytes(total))")
                 .font(.title3.bold())
             Text(model.freeable == 0
-                 ? "Niente da liberare qui: non ci sono render o media ottimizzati dentro le librerie. Il peso grosso sta nei media: guarda “Mappa spazio”."
-                 : "Puoi liberare \(formatBytes(model.freeable)) senza toccare gli originali.")
+                 ? L("Niente da liberare qui: non ci sono render o media ottimizzati dentro le librerie. Il peso grosso sta nei media: guarda “Mappa spazio”.")
+                 : LF("Puoi liberare %@ senza toccare gli originali.", formatBytes(model.freeable)))
                 .foregroundStyle(.secondary)
         }
     }
@@ -308,7 +305,7 @@ struct CleanupView: View {
     private func card(_ lib: Library) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Text(lib.name).font(.headline)
+                Text(L(lib.name)).font(.headline)
                 Spacer()
                 Text(formatBytes(lib.total)).foregroundStyle(.secondary)
             }
@@ -318,7 +315,7 @@ struct CleanupView: View {
                 plainRow("Altri file (database, progetti, miniature)", lib.other)
             }
             if !lib.items.contains(where: { $0.canClean(includeAnalysis: model.includeAnalysis) }) {
-                Text("Niente da liberare in questa libreria.")
+                Text(L("Niente da liberare in questa libreria."))
                     .font(.callout).foregroundStyle(.secondary)
             }
         }
@@ -330,8 +327,8 @@ struct CleanupView: View {
         return HStack(alignment: .top, spacing: 10) {
             Image(systemName: "clock.arrow.circlepath").font(.title3).foregroundStyle(.secondary)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Backup automatici di Final Cut").font(.headline)
-                Text("\(model.backups.count) copie, create da Final Cut. Per toglierle usa “Librerie e progetti” o il Finder.")
+                Text(L("Backup automatici di Final Cut")).font(.headline)
+                Text(LF("%@ copie, create da Final Cut. Per toglierle usa “Librerie e progetti” o il Finder.", model.backups.count))
                     .font(.callout).foregroundStyle(.secondary)
             }
             Spacer()
@@ -344,7 +341,7 @@ struct CleanupView: View {
         let canClean = item.canClean(includeAnalysis: model.includeAnalysis)
         let color: Color = canClean ? .green : (item.blocked != nil ? .secondary : .orange)
         return HStack {
-            Text(item.label)
+            Text(L(item.label))
             Spacer()
             Text(item.note(includeAnalysis: model.includeAnalysis))
                 .font(.caption)
@@ -357,7 +354,7 @@ struct CleanupView: View {
 
     private func plainRow(_ title: String, _ size: Int64) -> some View {
         HStack {
-            Text(title).foregroundStyle(.secondary)
+            Text(L(title)).foregroundStyle(.secondary)
             Spacer()
             Text(formatBytes(size)).monospacedDigit().foregroundStyle(.secondary)
                 .frame(width: 90, alignment: .trailing)
@@ -366,12 +363,12 @@ struct CleanupView: View {
 
     private var footer: some View {
         HStack {
-            Toggle("Includi i file di analisi", isOn: $model.includeAnalysis)
-                .help("Si rigenerano, ma l'analisi può richiedere ore")
+            Toggle(L("Includi i file di analisi"), isOn: $model.includeAnalysis)
+                .help(L("Si rigenerano, ma l'analisi può richiedere ore"))
             Spacer()
-            Text("Liberabili: \(model.freeable == 0 ? "niente" : formatBytes(model.freeable))")
+            Text(LF("Liberabili: %@", model.freeable == 0 ? L("niente") : formatBytes(model.freeable)))
                 .foregroundStyle(.secondary)
-            Button("Pulisci…") { confirming = true }
+            Button(L("Pulisci…")) { confirming = true }
                 .disabled(model.cleanable.isEmpty || model.busy)
         }
         .padding(12)

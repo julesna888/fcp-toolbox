@@ -31,7 +31,7 @@ public enum FormatError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .notAllowed(let m): return m
-        case .failed(let m): return "diskutil ha risposto: \(m)"
+        case .failed(let m): return TF("diskutil ha risposto: %@", m)
         }
     }
 }

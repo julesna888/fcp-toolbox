@@ -116,10 +116,10 @@ extension Doctor {
                 }
                 let name = el.attribute(forName: "name")?.stringValue ?? "?"
                 if el.attribute(forName: "hasVideo")?.stringValue == "0", el.attribute(forName: "hasAudio")?.stringValue == "0" {
-                    r.anomalies.append("\(name): non ha né video né audio.")
+                    r.anomalies.append(TF("%@: non ha né video né audio.", name))
                 }
                 if let d = el.attribute(forName: "duration")?.stringValue, d.hasPrefix("0/") || d == "0s" {
-                    r.anomalies.append("\(name): durata zero.")
+                    r.anomalies.append(TF("%@: durata zero.", name))
                 }
             default: break
             }
@@ -142,7 +142,7 @@ extension Doctor {
         for el in root.children?.compactMap({ $0 as? XMLElement }) ?? [] where el.name != "resources" { walk(el) }
 
         r.frameRates = rates.sorted()
-        if rates.count > 1 { r.anomalies.append("Più frame rate nello stesso file (\(r.frameRates.joined(separator: ", "))): la timeline potrebbe ricampionare.") }
+        if rates.count > 1 { r.anomalies.append(TF("Più frame rate nello stesso file (%@): la timeline potrebbe ricampionare.", r.frameRates.joined(separator: ", "))) }
         return r
     }
 

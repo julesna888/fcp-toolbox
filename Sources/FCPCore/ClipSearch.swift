@@ -45,11 +45,11 @@ extension Doctor {
             progress(0.02, "Preparo l'ambiente Python…")
             // Apple's own Python 3.9 (Xcode / Command Line Tools): the one with an onnxruntime build for Intel Macs.
             let make = run("/usr/bin/python3", ["-m", "venv", clipDir.appendingPathComponent("venv").path])
-            guard make.status == 0 else { return "Non riesco a creare l'ambiente Python: \(make.out.suffix(300))" }
+            guard make.status == 0 else { return TF("Non riesco a creare l'ambiente Python: %@", make.out.suffix(300)) }
             if control.isCancelled { return "Interrotto." }
             progress(0.05, "Scarico le librerie (onnxruntime, numpy, tokenizers)…")
             let pip = run(clipDir.appendingPathComponent("venv/bin/pip").path, ["install", "--quiet", "onnxruntime==1.19.2", "numpy", "tokenizers"])
-            guard pip.status == 0 else { return "Installazione delle librerie non riuscita: \(pip.out.suffix(300))" }
+            guard pip.status == 0 else { return TF("Installazione delle librerie non riuscita: %@", pip.out.suffix(300)) }
         }
         let total = Double(clipFiles.reduce(0) { $0 + $1.minBytes })
         var done = 0.0
@@ -57,7 +57,7 @@ extension Doctor {
             let dest = clipDir.appendingPathComponent("models/\(f.name)")
             if fileSize(dest) >= f.minBytes { done += Double(f.minBytes); continue }
             if control.isCancelled { return "Interrotto." }
-            progress(0.15 + 0.85 * done / total, "Scarico il modello \(f.name)…")
+            progress(0.15 + 0.85 * done / total, TF("Scarico il modello %@…", f.name))
             let part = dest.appendingPathExtension("part")
             let p = Process()
             p.executableURL = URL(fileURLWithPath: "/usr/bin/curl")
@@ -67,13 +67,13 @@ extension Doctor {
             let base = done
             while p.isRunning {
                 Thread.sleep(forTimeInterval: 0.5)
-                progress(0.15 + 0.85 * (base + Double(fileSize(part))) / total, "Scarico il modello \(f.name)…")
+                progress(0.15 + 0.85 * (base + Double(fileSize(part))) / total, TF("Scarico il modello %@…", f.name))
             }
             control.attach(nil)
             if control.isCancelled { return "Interrotto." }
-            guard p.terminationStatus == 0, fileSize(part) >= f.minBytes else { return "Download di \(f.name) non riuscito: controlla la connessione e riprova (riparte da dove si era fermato)." }
+            guard p.terminationStatus == 0, fileSize(part) >= f.minBytes else { return TF("Download di %@ non riuscito: controlla la connessione e riprova (riparte da dove si era fermato).", f.name) }
             try? fm.removeItem(at: dest)
-            do { try fm.moveItem(at: part, to: dest) } catch { return "Non riesco a salvare \(f.name)." }
+            do { try fm.moveItem(at: part, to: dest) } catch { return TF("Non riesco a salvare %@.", f.name) }
             done += Double(f.minBytes)
         }
         progress(1, "Pronto.")
@@ -157,7 +157,7 @@ extension Doctor {
         guard !q.isEmpty else { return ([], nil) }
         writeClipScript()
         let r = run(clipPython, [clipDir.appendingPathComponent("clipsearch.py").path, "search", indexURL.path, q, String(limit * 3), folder?.path ?? ""])
-        guard r.status == 0 else { return ([], "Ricerca non riuscita: \(r.out.suffix(300))") }
+        guard r.status == 0 else { return ([], TF("Ricerca non riuscita: %@", r.out.suffix(300))) }
         return (Array(parseClipHits(r.out, query: q).prefix(limit)), nil)
     }
 }

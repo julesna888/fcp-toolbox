@@ -57,10 +57,10 @@ public struct Step: Codable, Equatable, Sendable {
     public var summary: String {
         switch kind {
         case .resize: return "Ridimensiona a \(width)×\(height) (\(fit ? "intero, con barre" : "riempi, taglia ai lati"))"
-        case .compress: return "Riduci sotto \(targetMB) MB"
-        case .audio: return "Solo audio \(audioFormat.label)"
-        case .stripMetadata: return "Togli metadati: \(metadataKinds.map(\.rawValue).sorted().joined(separator: ", "))"
-        case .rename: return "Rinomina: \(pattern)"
+        case .compress: return TF("Riduci sotto %@ MB", targetMB)
+        case .audio: return TF("Solo audio %@", audioFormat.label)
+        case .stripMetadata: return TF("Togli metadati: %@", metadataKinds.map(\.rawValue).sorted().joined(separator: ", "))
+        case .rename: return TF("Rinomina: %@", pattern)
         default: return kind.title
         }
     }
@@ -171,15 +171,15 @@ extension Doctor {
                               progress: @escaping @Sendable (Double) -> Void = { _ in }) -> ConvertResult {
         func fail(_ m: String) -> ConvertResult { ConvertResult(source: source, output: nil, problems: [m]) }
         guard let ffmpeg = ffmpegPath else { return fail("ffmpeg non trovato. Installalo con Homebrew (brew install ffmpeg).") }
-        guard let info = try? probeMedia(source) else { return fail("Non riesco a leggere \(source.lastPathComponent).") }
-        guard info.video != nil else { return fail("\(source.lastPathComponent) non ha video.") }
+        guard let info = try? probeMedia(source) else { return fail(TF("Non riesco a leggere %@.", source.lastPathComponent)) }
+        guard info.video != nil else { return fail(TF("%@ non ha video.", source.lastPathComponent)) }
         let w = even(Double(width)), h = even(Double(height))
         let stem = source.deletingPathExtension().lastPathComponent + "_\(w)x\(h)"
         var out = outputDir.appendingPathComponent("\(stem).mp4")
         var n = 2
         while fm.fileExists(atPath: out.path) { out = outputDir.appendingPathComponent("\(stem) \(n).mp4"); n += 1 }
         if let free = probe([outputDir]).free, info.size + 500_000_000 > free {
-            return fail("Spazio insufficiente: servono circa \(formatBytes(info.size)), ne restano \(formatBytes(free)).")
+            return fail(TF("Spazio insufficiente: servono circa %@, ne restano %@.", formatBytes(info.size), formatBytes(free)))
         }
         let args = ["-hide_banner", "-nostdin", "-n", "-i", source.path, "-map", "0:v:0", "-map", "0:a?",
                     "-vf", resizeFilter(width: w, height: h, fit: fit),
@@ -188,9 +188,9 @@ extension Doctor {
         let run = runFFmpeg(ffmpeg, args, duration: info.duration, control: control, progress: progress)
         var problem: String?
         if control.isCancelled { problem = "Interrotto." }
-        else if run.status != 0 { problem = "ffmpeg ha fallito su \(source.lastPathComponent): \(run.log.split(separator: "\n").last.map(String.init) ?? "errore sconosciuto")" }
+        else if run.status != 0 { problem = TF("ffmpeg ha fallito su %@: %@", source.lastPathComponent, run.log.split(separator: "\n").last.map(String.init) ?? "errore sconosciuto") }
         else if let made = try? probeMedia(out), let v = made.video {
-            if v.width != w || v.height != h { problem = "Il risultato è \(v.width)×\(v.height) invece di \(w)×\(h)." }
+            if v.width != w || v.height != h { problem = TF("Il risultato è %@×%@ invece di %@×%@.", v.width, v.height, w, h) }
         } else { problem = "Il file creato non si apre: non è valido." }
         if let problem {
             try? fm.removeItem(at: out)  // the file this call just created
@@ -252,7 +252,7 @@ extension Doctor {
                 r = ConvertResult(source: current, output: m.output, problems: m.problem.map { [$0] } ?? [])
             case .rename: continue
             }
-            guard let out = r.output, r.ok else { return finish(nil, [r.problems.first ?? "Passaggio non riuscito: \(step.kind.title)."]) }
+            guard let out = r.output, r.ok else { return finish(nil, [r.problems.first ?? TF("Passaggio non riuscito: %@.", step.kind.title)]) }
             if current != link { try? fm.removeItem(at: current) }  // intermediate of ours: free the space now
             current = out
             done += 1
@@ -277,7 +277,7 @@ extension Doctor {
             if current == link { try fm.copyItem(at: source, to: final) } else { try fm.moveItem(at: current, to: final) }
         } catch {
             try? fm.removeItem(at: final)
-            return finish(nil, ["Non riesco a salvare \(final.lastPathComponent): \(error.localizedDescription)"])
+            return finish(nil, [TF("Non riesco a salvare %@: %@", final.lastPathComponent, error.localizedDescription)])
         }
         progress(1)
         return finish(final, [])

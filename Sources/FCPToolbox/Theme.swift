@@ -34,11 +34,11 @@ struct Tile: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text(value)
+            Text(L(value))
                 .font(.system(size: 26, weight: .semibold, design: .rounded))
                 .monospacedDigit()
                 .foregroundStyle(tint.map { AnyShapeStyle($0) } ?? AnyShapeStyle(.white))
-            Text(label.uppercased())
+            Text(L(label).uppercased())
                 .font(.system(size: 10, weight: .medium)).tracking(0.8)
                 .foregroundStyle(.secondary)
         }
@@ -77,8 +77,8 @@ struct SidebarHeader: View {
             Image(nsImage: NSApp.applicationIconImage)
                 .resizable().frame(width: 38, height: 38)
             VStack(alignment: .leading, spacing: 0) {
-                Text("FCP Toolbox").font(.headline)
-                Text("per Final Cut Pro").font(.caption).foregroundStyle(.secondary)
+                Text(L("FCP Toolbox")).font(.headline)
+                Text(L("per Final Cut Pro")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .padding(.vertical, 6)

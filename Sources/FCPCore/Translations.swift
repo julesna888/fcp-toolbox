@@ -11,6 +11,8 @@ public enum Lang: String, CaseIterable {
     public static var current: Lang {
         get {
             if let s = UserDefaults.standard.string(forKey: key), let l = Lang(rawValue: s) { return l }
+            // tests and CI force a language with FCP_LANG so results do not depend on the Mac
+            if let e = ProcessInfo.processInfo.environment["FCP_LANG"], let l = Lang(rawValue: e) { return l }
             return (Locale.preferredLanguages.first ?? "en").hasPrefix("it") ? .it : .en
         }
         set { UserDefaults.standard.set(newValue.rawValue, forKey: key) }
@@ -26,7 +28,26 @@ public enum Lang: String, CaseIterable {
 }
 
 public enum Translations {
-    public static let en: [String: String] = [
+    /// All English texts: the base list plus the per-area lists in TranslationsMore*.swift.
+    public static let en: [String: String] = parts.reduce(base) { $0.merging($1) { a, _ in a } }
+
+    /// Text with "%@" holes, filled in order. Used where Italian text has numbers or names inside.
+    public static func format(_ italian: String, _ args: [Any]) -> String {
+        var out = Lang.tr(italian)
+        for a in args {
+            guard let r = out.range(of: "%@") else { break }
+            out.replaceSubrange(r, with: String(describing: a))
+        }
+        return out
+    }
+
+    /// The file SwiftUI reads for plain `Text("…")` literals; written into the app by scripts/build_app.sh.
+    public static func stringsFile() -> String {
+        func esc(_ s: String) -> String { s.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"").replacingOccurrences(of: "\n", with: "\\n") }
+        return en.sorted { $0.key < $1.key }.map { "\"\(esc($0.key))\" = \"\(esc($0.value))\";" }.joined(separator: "\n") + "\n"
+    }
+
+    static let base: [String: String] = [
         // sidebar pages and groups
         "Libera spazio": "Free up space", "Strumenti": "Tools", "Scarica da link": "Download from link",
         "Ordina cartelle clienti": "Sort client folders", "Controllo prima di montare": "Pre-edit check",
@@ -84,3 +105,7 @@ public enum Translations {
         "Cerca strumento": "Search tools", "Guida": "Help",
     ]
 }
+
+/// Short names used inside FCPCore for text that reaches the screen.
+func T(_ italian: String) -> String { Lang.tr(italian) }
+func TF(_ italian: String, _ args: Any...) -> String { Translations.format(italian, args) }

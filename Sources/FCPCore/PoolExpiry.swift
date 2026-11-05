@@ -82,7 +82,7 @@ extension Doctor {
             var isDir: ObjCBool = false
             guard fm.fileExists(atPath: e.path, isDirectory: &isDir) else { report.gone += 1; finished.insert(e.path); continue }
             if isDir.boolValue || e.path.contains("Original Media") || e.path.contains(".fcpbundle") {
-                report.skipped.append("\(url.lastPathComponent): non è una clip del pool, non lo tocco")
+                report.skipped.append(TF("%@: non è una clip del pool, non lo tocco", url.lastPathComponent))
                 finished.insert(e.path)
                 continue
             }
@@ -99,7 +99,7 @@ extension Doctor {
         savePoolExpiry(list.filter { !finished.contains($0.path) }, ledger: ledger)
         if !report.trashed.isEmpty {
             let parent = report.trashed[0].deletingLastPathComponent()
-            _ = logOperation(kind: "pool-expiry", summary: "Cestinate \(report.trashed.count) clip del pool scadute dopo \(poolExpiryDays) giorni (le cartelle restano)",
+            _ = logOperation(kind: "pool-expiry", summary: TF("Cestinate %@ clip del pool scadute dopo %@ giorni (le cartelle restano)", report.trashed.count, poolExpiryDays),
                              paths: report.trashed, estimated: bytes, failures: report.failures, before: probe([parent]), log: operationsLog)
         }
         return report
@@ -131,7 +131,7 @@ extension Doctor {
             let name = folder.deletingLastPathComponent().lastPathComponent + " / " + folder.lastPathComponent
             events.append(AutomationEvent(
                 key: key, title: "Clip del pool in scadenza",
-                body: "«\(name)»: \(entries.count) clip vanno nel Cestino il \(shown.string(from: first)) (tra \(days) \(days == 1 ? "giorno" : "giorni")). Per tenerle: FCP Toolbox, Ordina cartelle clienti, «Tieni per sempre»."))
+                body: TF("«%@»: %@ clip vanno nel Cestino il %@ (tra %@ %@). Per tenerle: FCP Toolbox, Ordina cartelle clienti, «Tieni per sempre».", name, entries.count, shown.string(from: first), days, days == 1 ? "giorno" : "giorni")))
         }
         if !events.isEmpty {
             try? fm.createDirectory(at: warned.deletingLastPathComponent(), withIntermediateDirectories: true)

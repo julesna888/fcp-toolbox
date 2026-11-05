@@ -31,7 +31,7 @@ import UniformTypeIdentifiers
         let job = self
         Task {
             for (i, url) in urls.enumerated() {
-                if stopped { rows[i].state = .failed("Annullato."); continue }
+                if stopped { rows[i].state = .failed(L("Annullato.")); continue }
                 rows[i].state = .running
                 fraction = 0
                 control = ProxyControl()
@@ -39,7 +39,7 @@ import UniformTypeIdentifiers
                 let r = await Task.detached(priority: .userInitiated) {
                     Doctor.convert(url, tool: tool, options: options, control: c) { f in Task { @MainActor in job.fraction = f } }
                 }.value
-                if let out = r.output, r.ok { rows[i].state = .done(out) } else { rows[i].state = .failed(r.problems.first ?? "Errore sconosciuto") }
+                if let out = r.output, r.ok { rows[i].state = .done(out) } else { rows[i].state = .failed(r.problems.first ?? L("Errore sconosciuto")) }
             }
             running = false
         }
@@ -80,20 +80,20 @@ struct MissingToolHelp: View {
     @State private var tick = 0
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(what).foregroundStyle(Theme.orange).fixedSize(horizontal: false, vertical: true)
-            Text("Si installa una volta sola, dal Terminale: copia il comando, aprilo, incollalo e premi Invio. Poi torna qui e premi «Ricontrolla».")
+            Text(L(what)).foregroundStyle(Theme.orange).fixedSize(horizontal: false, vertical: true)
+            Text(L("Si installa una volta sola, dal Terminale: copia il comando, aprilo, incollalo e premi Invio. Poi torna qui e premi «Ricontrolla»."))
                 .font(.callout).foregroundStyle(.secondary)
-            Text(command).font(.system(.callout, design: .monospaced)).textSelection(.enabled)
+            Text(L(command)).font(.system(.callout, design: .monospaced)).textSelection(.enabled)
                 .padding(8).frame(maxWidth: .infinity, alignment: .leading)
                 .background(Theme.panelHigh, in: RoundedRectangle(cornerRadius: 8))
             HStack {
-                Button(copied ? "Copiato" : "Copia il comando") {
+                Button(copied ? L("Copiato") : L("Copia il comando")) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(command, forType: .string)
                     copied = true
                 }
-                Button("Ricontrolla") { tick += 1; copied = false }
-                Text(tick == 0 ? "" : isInstalled() ? "Trovato! Cambia pagina e torna qui: ora funziona." : "Ancora non lo trovo.")
+                Button(L("Ricontrolla")) { tick += 1; copied = false }
+                Text(tick == 0 ? "" : isInstalled() ? L("Trovato! Cambia pagina e torna qui: ora funziona.") : L("Ancora non lo trovo."))
                     .font(.caption).foregroundStyle(tick > 0 && isInstalled() ? Theme.green : .secondary)
             }
         }
@@ -106,12 +106,12 @@ struct DownloadView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                Text("Incolla il link di un video e lo salvo sul Mac, come video oppure solo audio.").foregroundStyle(.secondary)
+                Text(L("Incolla il link di un video e lo salvo sul Mac, come video oppure solo audio.")).foregroundStyle(.secondary)
                 LinkDownloadCard()
             }
             .padding(16)
         }
-        .navigationTitle("Scarica da link")
+        .navigationTitle(L("Scarica da link"))
     }
 }
 
@@ -133,8 +133,8 @@ struct LinkDownloadCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Scarica da link").font(.headline)
-            Text("YouTube, Instagram, TikTok e altri. Scarica solo contenuti tuoi o che hai il diritto di usare. Salvo nella cartella Download.")
+            Text(L("Scarica da link")).font(.headline)
+            Text(L("YouTube, Instagram, TikTok e altri. Scarica solo contenuti tuoi o che hai il diritto di usare. Salvo nella cartella Download."))
                 .font(.caption).foregroundStyle(.secondary)
             if Doctor.ytdlpPath == nil {
                 MissingToolHelp(what: "Manca yt-dlp, il programma gratuito che scarica i video dai link.",
@@ -142,21 +142,21 @@ struct LinkDownloadCard: View {
                                 isInstalled: { Doctor.ytdlpPath != nil })
             }
             HStack {
-                TextField("Incolla qui il link", text: $link).textFieldStyle(.roundedBorder)
+                TextField(L("Incolla qui il link"), text: $link).textFieldStyle(.roundedBorder)
                     .onSubmit { if !job.running, Doctor.ytdlpPath != nil, !link.trimmingCharacters(in: .whitespaces).isEmpty { job.run(link, kind: kind, to: folder) } }
-                Button("Incolla") { link = NSPasteboard.general.string(forType: .string) ?? link }
+                Button(L("Incolla")) { link = NSPasteboard.general.string(forType: .string) ?? link }
             }
             HStack {
                 Picker("", selection: $format) {
-                    Text("Video").tag("video"); Text("MP3").tag("mp3"); Text("WAV").tag("wav"); Text("AAC").tag("aac")
+                    Text(L("Video")).tag("video"); Text(L("MP3")).tag("mp3"); Text(L("WAV")).tag("wav"); Text(L("AAC")).tag("aac")
                 }
                 .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 280)
                 if job.running {
                     ProgressView(value: job.fraction).frame(width: 110)
                     Text("\(Int(job.fraction * 100))%").monospacedDigit().foregroundStyle(.secondary)
-                    Button("Ferma") { job.stop() }
+                    Button(L("Ferma")) { job.stop() }
                 } else {
-                    Button("Scarica") { job.run(link, kind: kind, to: folder) }
+                    Button(L("Scarica")) { job.run(link, kind: kind, to: folder) }
                         .buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction)
                         .disabled(link.trimmingCharacters(in: .whitespaces).isEmpty || Doctor.ytdlpPath == nil)
                 }
@@ -164,12 +164,12 @@ struct LinkDownloadCard: View {
             if let r = job.result {
                 if let out = r.output, r.ok {
                     HStack {
-                        Text("Fatto: \(out.lastPathComponent)").foregroundStyle(Theme.green).lineLimit(1)
-                        Button("Mostra nel Finder") { NSWorkspace.shared.activateFileViewerSelecting([out]) }
+                        Text(LF("Fatto: %@", out.lastPathComponent)).foregroundStyle(Theme.green).lineLimit(1)
+                        Button(L("Mostra nel Finder")) { NSWorkspace.shared.activateFileViewerSelecting([out]) }
                     }
                 }
-                ForEach(r.problems, id: \.self) { Text($0).foregroundStyle(Theme.orange) }
-                ForEach(r.notes, id: \.self) { Text($0).foregroundStyle(.secondary).font(.caption) }
+                ForEach(r.problems, id: \.self) { Text(L($0)).foregroundStyle(Theme.orange) }
+                ForEach(r.notes, id: \.self) { Text(L($0)).foregroundStyle(.secondary).font(.caption) }
             }
         }
         .card()
@@ -364,14 +364,14 @@ struct ToolsView: View {
                     options(for: tool)
                     if !waiting.isEmpty {
                         HStack {
-                            Text("Pronti \(waiting.count) file per «\(tool.title)»").font(.headline)
+                            Text(LF("Pronti %@ file per «%@»", waiting.count, L(tool.title))).font(.headline)
                             Spacer()
-                            Button("Annulla") { waiting = [] }
-                            Button("Avvia") { start(waiting); waiting = [] }.buttonStyle(.borderedProminent)
+                            Button(L("Annulla")) { waiting = [] }
+                            Button(L("Avvia")) { start(waiting); waiting = [] }.buttonStyle(.borderedProminent)
                         }
                         .card()
                     }
-                    if let dropNote { Text(dropNote).font(.callout).foregroundStyle(Theme.orange) }
+                    if let dropNote { Text(L(dropNote)).font(.callout).foregroundStyle(Theme.orange) }
                     dropZone
                     if !job.rows.isEmpty { results }
                 }
@@ -395,10 +395,10 @@ struct ToolsView: View {
     @ViewBuilder private func options(for t: ConvertTool) -> some View {
         switch t {
         case .audio:
-            Picker("Formato", selection: $options.audioFormat) { ForEach(AudioFormat.allCases) { Text($0.label).tag($0) } }
+            Picker(L("Formato"), selection: $options.audioFormat) { ForEach(AudioFormat.allCases) { Text(L($0.label)).tag($0) } }
                 .pickerStyle(.segmented).frame(maxWidth: 260)
         case .compress:
-            Picker("Limite", selection: $options.targetMB) {
+            Picker(L("Limite"), selection: $options.targetMB) {
                 ForEach([16, 25, 50, 100], id: \.self) { Text("\($0) MB").tag($0) }
             }
             .pickerStyle(.segmented).frame(maxWidth: 320)
@@ -409,11 +409,11 @@ struct ToolsView: View {
     private var dropZone: some View {
         VStack(spacing: 8) {
             Image(systemName: "arrow.down.doc").font(.title)
-            Text(job.running ? "Sto lavorando…" : "Trascina qui i file per «\(tool.title)»").font(.headline)
+            Text(job.running ? L("Sto lavorando…") : LF("Trascina qui i file per «%@»", L(tool.title))).font(.headline)
             if job.running {
-                Button("Ferma tutto") { job.stop() }
+                Button(L("Ferma tutto")) { job.stop() }
             } else {
-                Button("Scegli file…") { picking = true }
+                Button(L("Scegli file…")) { picking = true }
             }
         }
         .frame(maxWidth: .infinity, minHeight: 120)
@@ -426,19 +426,19 @@ struct ToolsView: View {
         VStack(alignment: .leading, spacing: 8) {
             ForEach(job.rows) { row in
                 HStack {
-                    Text(row.url.lastPathComponent).lineLimit(1)
+                    Text(L(row.url.lastPathComponent)).lineLimit(1)
                     Spacer()
                     switch row.state {
-                    case .waiting: Text("In attesa").foregroundStyle(.secondary)
+                    case .waiting: Text(L("In attesa")).foregroundStyle(.secondary)
                     case .running:
                         ProgressView(value: job.fraction).frame(width: 110)
                         Text("\(Int(job.fraction * 100))%").monospacedDigit().foregroundStyle(.secondary)
-                        Button("Ferma") { job.stop() }
+                        Button(L("Ferma")) { job.stop() }
                     case .done(let out):
-                        Text("Fatto").foregroundStyle(Theme.green)
-                        Button("Mostra nel Finder") { NSWorkspace.shared.activateFileViewerSelecting([out]) }
+                        Text(L("Fatto")).foregroundStyle(Theme.green)
+                        Button(L("Mostra nel Finder")) { NSWorkspace.shared.activateFileViewerSelecting([out]) }
                     case .failed(let m):
-                        Text(m).foregroundStyle(Theme.orange).font(.caption).lineLimit(2)
+                        Text(L(m)).foregroundStyle(Theme.orange).font(.caption).lineLimit(2)
                     }
                 }
             }
@@ -468,11 +468,11 @@ struct ToolsView: View {
 
     /// Same rule as everywhere else: dropped files wait for «Avvia», nothing starts by itself.
     private func addWaiting(_ urls: [URL]) {
-        if job.running { dropNote = "Sto ancora lavorando: aspetta la fine oppure premi «Ferma tutto»."; return }
+        if job.running { dropNote = L("Sto ancora lavorando: aspetta la fine oppure premi «Ferma tutto»."); return }
         let files = urls.filter { !$0.hasDirectoryPath }
         let skipped = urls.count - files.count
         waiting += files.filter { !waiting.contains($0) }
-        dropNote = skipped > 0 ? "\(skipped) \(skipped == 1 ? "cartella ignorata" : "cartelle ignorate"): trascina i file, non le cartelle." : nil
+        dropNote = skipped > 0 ? LF("%@ cartelle ignorate: trascina i file, non le cartelle.", skipped) : nil
     }
 
     private func start(_ urls: [URL]) {

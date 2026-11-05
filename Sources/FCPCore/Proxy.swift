@@ -66,15 +66,15 @@ extension Doctor {
                                  progress: @escaping @Sendable (Double) -> Void = { _ in }) -> ProxyResult {
         func fail(_ m: String) -> ProxyResult { ProxyResult(source: source, output: nil, verified: false, problems: [m]) }
         guard let ffmpeg = ffmpegPath else { return fail("ffmpeg non trovato. Installalo con Homebrew (brew install ffmpeg).") }
-        guard let info = try? probeMedia(source), let v = info.video else { return fail("Non riesco a leggere il video di \(source.lastPathComponent).") }
+        guard let info = try? probeMedia(source), let v = info.video else { return fail(TF("Non riesco a leggere il video di %@.", source.lastPathComponent)) }
 
         let height = max(2, min(options.height, v.displayHeight) / 2 * 2)
         let out = options.destination.appendingPathComponent("\(source.deletingPathExtension().lastPathComponent)_proxy.\(options.codec.ext)")
-        guard !fm.fileExists(atPath: out.path) else { return fail("\(out.lastPathComponent) esiste già: non lo sovrascrivo.") }
+        guard !fm.fileExists(atPath: out.path) else { return fail(TF("%@ esiste già: non lo sovrascrivo.", out.lastPathComponent)) }
         try? fm.createDirectory(at: options.destination, withIntermediateDirectories: true)
         let need = estimatedProxyBytes(info, codec: options.codec, height: height)
         if let free = freeSpace(of: probe([options.destination]).volume ?? options.destination), need + 500_000_000 > free {
-            return fail("Spazio insufficiente per \(source.lastPathComponent): servono circa \(formatBytes(need)), ne restano \(formatBytes(free)).")
+            return fail(TF("Spazio insufficiente per %@: servono circa %@, ne restano %@.", source.lastPathComponent, formatBytes(need), formatBytes(free)))
         }
 
         let partial = out.appendingPathExtension("partial")
@@ -118,16 +118,16 @@ extension Doctor {
         guard p.terminationStatus == 0 else {
             try? fm.removeItem(at: partial)
             errLock.lock(); let msg = String(decoding: errText, as: UTF8.self).split(separator: "\n").last.map(String.init) ?? "errore sconosciuto"; errLock.unlock()
-            return fail("ffmpeg ha fallito su \(source.lastPathComponent): \(msg)")
+            return fail(TF("ffmpeg ha fallito su %@: %@", source.lastPathComponent, msg))
         }
-        do { try fm.moveItem(at: partial, to: out) } catch { return fail("Non riesco a salvare \(out.lastPathComponent): \(error.localizedDescription)") }
+        do { try fm.moveItem(at: partial, to: out) } catch { return fail(TF("Non riesco a salvare %@: %@", out.lastPathComponent, error.localizedDescription)) }
         progress(1)
 
         var problems: [String] = []
         if let o = try? probeMedia(out), let ov = o.video {
-            if ov.displayHeight != height { problems.append("Altezza \(ov.displayHeight) invece di \(height).") }
-            if options.codec == .proresProxy, ov.codec != "prores" { problems.append("Codec \(ov.codec) invece di ProRes.") }
-            if abs(o.duration - info.duration) > 0.5 { problems.append("Durata \(String(format: "%.1f", o.duration)) s invece di \(String(format: "%.1f", info.duration)) s.") }
+            if ov.displayHeight != height { problems.append(TF("Altezza %@ invece di %@.", ov.displayHeight, height)) }
+            if options.codec == .proresProxy, ov.codec != "prores" { problems.append(TF("Codec %@ invece di ProRes.", ov.codec)) }
+            if abs(o.duration - info.duration) > 0.5 { problems.append(TF("Durata %@ s invece di %@ s.", String(format: "%.1f", o.duration), String(format: "%.1f", info.duration))) }
             if !info.audio.isEmpty, o.audio.isEmpty { problems.append("L'audio non è stato copiato.") }
         } else {
             problems.append("Il proxy creato non è leggibile.")

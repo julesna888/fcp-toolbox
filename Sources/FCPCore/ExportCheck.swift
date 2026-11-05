@@ -106,7 +106,7 @@ extension Doctor {
         if let b = spec.minVideoMbps { add("Bitrate minimo", mbps >= b, "\(String(format: "%.1f", mbps)) Mbps, minimo \(Int(b)).") }
         if let b = spec.maxVideoMbps { add("Bitrate massimo", mbps <= b, "\(String(format: "%.1f", mbps)) Mbps, massimo \(Int(b)).") }
         if let d = spec.minBitDepth { add("Profondità colore", v.bitDepth >= d, "\(v.bitDepth) bit, minimo \(d).") }
-        if !spec.allowHDR { add("SDR", !v.isHDR, v.isHDR ? "Il file è HDR (\(v.transfer))." : "Standard (SDR).") }
+        if !spec.allowHDR { add("SDR", !v.isHDR, v.isHDR ? TF("Il file è HDR (%@).", v.transfer) : "Standard (SDR).") }
 
         if spec.requireAudio || spec.audioChannels != nil || spec.audioSampleRates != nil || spec.audioCodecs != nil {
             guard let a = m.audio.first else {
@@ -131,15 +131,15 @@ extension Doctor {
     public static func technicalAnomalies(_ m: MediaInfo) -> [String] {
         var out: [String] = []
         if let names = containerNames[m.url.pathExtension.lowercased()], !names.contains(where: { m.container.contains($0) }) {
-            out.append("L'estensione dice .\(m.url.pathExtension.lowercased()) ma il contenitore reale è \(m.container).")
+            out.append(TF("L'estensione dice .%@ ma il contenitore reale è %@.", m.url.pathExtension.lowercased(), m.container))
         }
         guard let v = m.video else { out.append("Nessuna traccia video."); return out }
         if m.duration <= 0 { out.append("Durata non rilevata.") }
-        if v.width % 2 == 1 || v.height % 2 == 1 { out.append("Dimensioni dispari (\(v.width)×\(v.height)): alcuni codec e piattaforme le rifiutano.") }
+        if v.width % 2 == 1 || v.height % 2 == 1 { out.append(TF("Dimensioni dispari (%@×%@): alcuni codec e piattaforme le rifiutano.", v.width, v.height)) }
         if v.isVFR { out.append("Frame rate variabile: può dare sfasamenti audio e problemi nel montaggio.") }
-        if v.rotation != 0 { out.append("Il file è ruotato di \(v.rotation)° nei metadati: alcuni player lo mostrano storto.") }
+        if v.rotation != 0 { out.append(TF("Il file è ruotato di %@° nei metadati: alcuni player lo mostrano storto.", v.rotation)) }
         if let a = m.audio.first, v.duration > 0, a.duration > 0, abs(v.duration - a.duration) > 0.5 {
-            out.append("Audio e video hanno durate diverse (video \(String(format: "%.1f", v.duration)) s, audio \(String(format: "%.1f", a.duration)) s).")
+            out.append(TF("Audio e video hanno durate diverse (video %@ s, audio %@ s).", String(format: "%.1f", v.duration), String(format: "%.1f", a.duration)))
         }
         if m.audio.isEmpty { out.append("Nessuna traccia audio.") }
         return out

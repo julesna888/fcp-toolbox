@@ -162,7 +162,7 @@ extension Doctor {
         var done: [[String]] = []
         var failures: [String] = []
         for s in steps where s.conflict == nil {
-            guard !fm.fileExists(atPath: s.to.path) else { failures.append("\(s.from.lastPathComponent): destinazione già presente"); continue }
+            guard !fm.fileExists(atPath: s.to.path) else { failures.append(TF("%@: destinazione già presente", s.from.lastPathComponent)); continue }
             do {
                 try fm.createDirectory(at: s.to.deletingLastPathComponent(), withIntermediateDirectories: true)
                 try fm.moveItem(at: s.from, to: s.to)
@@ -199,7 +199,7 @@ extension Doctor {
         for m in last.moves.reversed() {
             let from = URL(fileURLWithPath: m[0]), to = URL(fileURLWithPath: m[1])
             guard fm.fileExists(atPath: to.path) else { failures.append("\(to.lastPathComponent): non c'è più"); continue }
-            guard !fm.fileExists(atPath: from.path) else { failures.append("\(from.lastPathComponent): il nome originale è occupato"); continue }
+            guard !fm.fileExists(atPath: from.path) else { failures.append(TF("%@: il nome originale è occupato", from.lastPathComponent)); continue }
             do {
                 try fm.moveItem(at: to, to: from)
                 restored += 1

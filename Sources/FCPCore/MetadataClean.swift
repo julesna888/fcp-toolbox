@@ -62,14 +62,14 @@ extension Doctor {
             try? fm.removeItem(at: out)  // the unfinished file this call created
             return fail(result.problem ?? "Pulizia non riuscita.")
         }
-        _ = logOperation(kind: "metadata", summary: "Metadata tolti da \(source.lastPathComponent): \(kinds.map(\.rawValue).sorted().joined(separator: ", "))",
+        _ = logOperation(kind: "metadata", summary: TF("Metadata tolti da %@: %@", source.lastPathComponent, kinds.map(\.rawValue).sorted().joined(separator: ", ")),
                          paths: [out], estimated: byteSize(out), failures: [], before: before)
         return MetadataCleanResult(output: out, problem: nil, removed: removed)
     }
 
     private static func cleanVideo(_ source: URL, to out: URL, kinds: Set<MetadataKind>) -> (removed: [String]?, problem: String?) {
         guard let ffmpeg = ffmpegPath else { return (nil, "ffmpeg non trovato (brew install ffmpeg).") }
-        guard let info = try? probeMedia(source) else { return (nil, "Non riesco a leggere \(source.lastPathComponent).") }
+        guard let info = try? probeMedia(source) else { return (nil, TF("Non riesco a leggere %@.", source.lastPathComponent)) }
         let keys = metadataKeys(info.tags, matching: kinds)
         var args = ["-hide_banner", "-loglevel", "error", "-i", source.path, "-map", "0", "-c", "copy"]
         if kinds.contains(.everything) {
@@ -87,14 +87,14 @@ extension Doctor {
             return (nil, "Pulizia non riuscita: " + (r.out.split(separator: "\n").last.map(String.init) ?? "errore sconosciuto"))
         }
         let left = Set(made.tags.keys).intersection(keys)
-        if !left.isEmpty && !kinds.contains(.everything) { return (nil, "Alcuni dati sono rimasti nel file: \(left.sorted().joined(separator: ", "))") }
+        if !left.isEmpty && !kinds.contains(.everything) { return (nil, TF("Alcuni dati sono rimasti nel file: %@", left.sorted().joined(separator: ", "))) }
         return (keys.sorted(), nil)
     }
 
     private static func cleanPhoto(_ source: URL, to out: URL, kinds: Set<MetadataKind>) -> (removed: [String]?, problem: String?) {
         guard let src = CGImageSourceCreateWithURL(source as CFURL, nil), let type = CGImageSourceGetType(src),
               let props = CGImageSourceCopyPropertiesAtIndex(src, 0, nil) as? [CFString: Any] else {
-            return (nil, "Non riesco ad aprire \(source.lastPathComponent) come foto.")
+            return (nil, TF("Non riesco ad aprire %@ come foto.", source.lastPathComponent))
         }
         var removed: [String] = []
         var new: [CFString: Any] = [kCGImageDestinationLossyCompressionQuality: 1.0]
@@ -146,9 +146,9 @@ extension Doctor {
             if p[kCGImagePropertyGPSDictionary] != nil { out.append("Posizione GPS") }
             if let t = p[kCGImagePropertyTIFFDictionary] as? [CFString: Any] {
                 let device = [t[kCGImagePropertyTIFFMake], t[kCGImagePropertyTIFFModel]].compactMap { $0 as? String }.joined(separator: " ")
-                if !device.isEmpty { out.append("Dispositivo: \(device)") }
+                if !device.isEmpty { out.append(TF("Dispositivo: %@", device)) }
             }
-            if let e = p[kCGImagePropertyExifDictionary] as? [CFString: Any], let d = e[kCGImagePropertyExifDateTimeOriginal] { out.append("Scattata il \(d)") }
+            if let e = p[kCGImagePropertyExifDictionary] as? [CFString: Any], let d = e[kCGImagePropertyExifDateTimeOriginal] { out.append(TF("Scattata il %@", d)) }
             if p[kCGImagePropertyIPTCDictionary] != nil { out.append("Titolo/autore (IPTC)") }
             return out
         }

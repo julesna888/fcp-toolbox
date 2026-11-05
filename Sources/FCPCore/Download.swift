@@ -114,15 +114,15 @@ extension Doctor {
             file = outputDir.appendingPathComponent("\(made.deletingPathExtension().lastPathComponent) \(n).\(made.pathExtension)")
             n += 1
         }
-        do { try fm.moveItem(at: made, to: file) } catch { return fail("Non riesco a salvare in \(outputDir.lastPathComponent): \(error.localizedDescription)") }
+        do { try fm.moveItem(at: made, to: file) } catch { return fail(TF("Non riesco a salvare in %@: %@", outputDir.lastPathComponent, error.localizedDescription)) }
         var notes: [String] = []
         guard let info = try? probeMedia(file) else {
             return DownloadResult(output: file, problems: ["Il file scaricato non si apre: potrebbe essere incompleto."], notes: notes)
         }
         if kind == .video, let v = info.video, v.codec != "h264" {
-            notes.append("Il video è \(v.codec): Final Cut potrebbe non aprirlo. Usa «Prepara per montaggio» per convertirlo.")
+            notes.append(TF("Il video è %@: Final Cut potrebbe non aprirlo. Usa «Prepara per montaggio» per convertirlo.", v.codec))
         }
-        logOperation(kind: "download", summary: "Scaricato da link: \(file.lastPathComponent)", paths: [file],
+        logOperation(kind: "download", summary: TF("Scaricato da link: %@", file.lastPathComponent), paths: [file],
                      estimated: info.size, failures: [], before: probe([outputDir]))
         return DownloadResult(output: file, problems: [], notes: notes)
     }

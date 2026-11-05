@@ -5,6 +5,17 @@ import SwiftUI
 struct FCPToolboxApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
     @StateObject private var model = Model.shared
+    @AppStorage(Lang.key) private var langRaw = ""
+
+    init() {
+        // build step: writes the English texts SwiftUI looks up for plain Text("…") (see scripts/build_app.sh)
+        if let i = CommandLine.arguments.firstIndex(of: "--dump-strings"), CommandLine.arguments.count > i + 1 {
+            let dir = URL(fileURLWithPath: CommandLine.arguments[i + 1]).appendingPathComponent("en.lproj")
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            try? Translations.stringsFile().write(to: dir.appendingPathComponent("Localizable.strings"), atomically: true, encoding: .utf8)
+            exit(0)
+        }
+    }
 
     var body: some Scene {
         Window("FCP Toolbox", id: "main") {
@@ -12,6 +23,7 @@ struct FCPToolboxApp: App {
                 .environmentObject(model)
                 .preferredColorScheme(.dark)
                 .tint(Theme.blue)
+                .environment(\.locale, Locale(identifier: (Lang(rawValue: langRaw) ?? Lang.current).rawValue))
                 // links (fcptoolbox://…) and files opened with the app go to the open window, not to a new one
                 .onOpenURL { url in
                     NSApp.activate(ignoringOtherApps: true)
@@ -21,18 +33,18 @@ struct FCPToolboxApp: App {
         .defaultSize(width: 1240, height: 800)
         .commands {
             CommandGroup(replacing: .newItem) {
-                Button("Aggiungi disco o cartella…") { model.picking = true }
+                Button(L("Aggiungi disco o cartella…")) { model.picking = true }
                     .keyboardShortcut("o")
-                Button("Aggiorna analisi") { model.rescan() }
+                Button(L("Aggiorna analisi")) { model.rescan() }
                     .keyboardShortcut("r")
                     .disabled(model.roots.isEmpty || model.busy)
             }
             CommandGroup(after: .appInfo) {
-                Button("Controlla aggiornamenti…") { Task { await Updater.check() } }
+                Button(L("Controlla aggiornamenti…")) { Task { await Updater.check() } }
             }
             CommandGroup(after: .textEditing) {
                 // works while the app is frontmost; a system-wide hotkey would need extra permissions
-                Button("Cerca uno strumento…") { model.showSearch = true }
+                Button(L("Cerca uno strumento…")) { model.showSearch = true }
                     .keyboardShortcut("k")
             }
         }
@@ -52,17 +64,17 @@ enum Updater {
             req.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
             let (data, _) = try await URLSession.shared.data(for: req)
             if let r = UpdateCheck.parse(data), UpdateCheck.isNewer(r.version, than: current) {
-                alert.messageText = "C'è una versione nuova: \(r.version)"
-                alert.informativeText = "Hai la \(current). Scarica il nuovo file .dmg e trascina l'app in Applicazioni al posto della vecchia. Se hai installato con Homebrew: brew upgrade --cask fcp-toolbox."
-                alert.addButton(withTitle: "Apri la pagina di download"); alert.addButton(withTitle: "Più tardi")
+                alert.messageText = LF("C'è una versione nuova: %@", r.version)
+                alert.informativeText = LF("Hai la %@. Scarica il nuovo file .dmg e trascina l'app in Applicazioni al posto della vecchia. Se hai installato con Homebrew: brew upgrade --cask fcp-toolbox.", current)
+                alert.addButton(withTitle: L("Apri la pagina di download")); alert.addButton(withTitle: L("Più tardi"))
                 open = r.page
             } else {
-                alert.messageText = "Hai già l'ultima versione (\(current))"
+                alert.messageText = LF("Hai già l'ultima versione (%@)", current)
                 alert.addButton(withTitle: "OK")
             }
         } catch {
-            alert.messageText = "Non riesco a controllare gli aggiornamenti"
-            alert.informativeText = "Serve internet. Riprova più tardi."
+            alert.messageText = L("Non riesco a controllare gli aggiornamenti")
+            alert.informativeText = L("Serve internet. Riprova più tardi.")
             alert.addButton(withTitle: "OK")
         }
         NSApp.activate(ignoringOtherApps: true)

@@ -167,9 +167,9 @@ extension Doctor {
                                progress: @escaping @Sendable (Double) -> Void = { _ in }) -> ConvertResult {
         func fail(_ m: String) -> ConvertResult { ConvertResult(source: source, output: nil, problems: [m]) }
         guard let ffmpeg = ffmpegPath else { return fail("ffmpeg non trovato. Installalo con Homebrew (brew install ffmpeg).") }
-        guard let info = try? probeMedia(source) else { return fail("Non riesco a leggere \(source.lastPathComponent).") }
-        if tool.needsVideo && info.video == nil { return fail("\(source.lastPathComponent) non ha video.") }
-        if !tool.needsVideo && info.audio.isEmpty { return fail("\(source.lastPathComponent) non ha audio.") }
+        guard let info = try? probeMedia(source) else { return fail(TF("Non riesco a leggere %@.", source.lastPathComponent)) }
+        if tool.needsVideo && info.video == nil { return fail(TF("%@ non ha video.", source.lastPathComponent)) }
+        if !tool.needsVideo && info.audio.isEmpty { return fail(TF("%@ non ha audio.", source.lastPathComponent)) }
 
         let dir = outputDir ?? source.deletingLastPathComponent()
         let (suffix, ext) = convertExtension(tool, info: info, options: options)
@@ -181,7 +181,7 @@ extension Doctor {
         let need = tool == .compress ? Int64(options.targetMB) * 1_048_576 : info.size
         let before = probe([dir])
         if let free = before.free, need + 500_000_000 > free {
-            return fail("Spazio insufficiente: servono circa \(formatBytes(need)), ne restano \(formatBytes(free)).")
+            return fail(TF("Spazio insufficiente: servono circa %@, ne restano %@.", formatBytes(need), formatBytes(free)))
         }
 
         var loudness: LoudnessMeasure?
@@ -189,7 +189,7 @@ extension Doctor {
             let measure = runFFmpeg(ffmpeg, ["-hide_banner", "-nostdin", "-i", source.path, "-vn",
                                              "-af", "loudnorm=I=-14:TP=-1:LRA=11:print_format=json", "-f", "null", "-"], control: control)
             if control.isCancelled { return fail("Interrotto.") }
-            guard measure.status == 0, let m = parseLoudnorm(measure.log) else { return fail("Non riesco a misurare il volume di \(source.lastPathComponent).") }
+            guard measure.status == 0, let m = parseLoudnorm(measure.log) else { return fail(TF("Non riesco a misurare il volume di %@.", source.lastPathComponent)) }
             loudness = m
         }
 
@@ -201,14 +201,14 @@ extension Doctor {
             problems.append("Interrotto.")
             discard = true
         } else if run.status != 0 {
-            problems.append("ffmpeg ha fallito su \(source.lastPathComponent): \(run.log.split(separator: "\n").last.map(String.init) ?? "errore sconosciuto")")
+            problems.append(TF("ffmpeg ha fallito su %@: %@", source.lastPathComponent, run.log.split(separator: "\n").last.map(String.init) ?? "errore sconosciuto"))
             discard = true
         } else if let check = try? probeMedia(out) {
             if tool != .still, abs(check.duration - info.duration) > max(1, info.duration * 0.02) {
-                problems.append("La durata del risultato (\(Int(check.duration)) s) non corrisponde all'originale (\(Int(info.duration)) s).")
+                problems.append(TF("La durata del risultato (%@ s) non corrisponde all'originale (%@ s).", Int(check.duration), Int(info.duration)))
             }
             if tool == .compress, Double(check.size) > Double(need) * 1.1 {
-                problems.append("Il risultato (\(formatBytes(check.size))) supera il limite di \(options.targetMB) MB: prova un limite più alto.")
+                problems.append(TF("Il risultato (%@) supera il limite di %@ MB: prova un limite più alto.", formatBytes(check.size), options.targetMB))
             }
         } else {
             problems.append("Il file creato non si apre: non è valido.")

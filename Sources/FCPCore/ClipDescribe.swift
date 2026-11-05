@@ -92,7 +92,7 @@ extension Doctor {
             try paths.joined(separator: "\n").write(to: listFile, atomically: true, encoding: .utf8)
         } catch { return ([:], false, "Non riesco a preparare i file di lavoro.") }
         let r = run(clipPython, [clipDir.appendingPathComponent("clipsearch.py").path, "describe", indexURL.path, vocabFile.path, cacheURL.path, listFile.path])
-        guard r.status == 0 else { return ([:], false, "Descrizione non riuscita: \(r.out.suffix(300))") }
+        guard r.status == 0 else { return ([:], false, TF("Descrizione non riuscita: %@", r.out.suffix(300))) }
         var scores: [String: [Float]] = [:]
         var cached = false
         for line in r.out.split(separator: "\n") {

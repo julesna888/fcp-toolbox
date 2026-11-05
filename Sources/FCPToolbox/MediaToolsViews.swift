@@ -12,7 +12,7 @@ private func freshURL(_ dir: URL, _ stem: String, _ ext: String) -> URL {
 
 private func pickFolder(_ message: String) -> URL? {
     let p = NSOpenPanel()
-    p.canChooseDirectories = true; p.canChooseFiles = false; p.message = message
+    p.canChooseDirectories = true; p.canChooseFiles = false; p.message = L(message)
     return p.runModal() == .OK ? p.url : nil
 }
 
@@ -38,16 +38,16 @@ struct InspectorView: View {
             VStack(alignment: .leading, spacing: 16) {
                 // subtitles: code kept, tab hidden (the user edits them in CapCut)
                 // the tab stays hidden unless we arrive from "Trascina qui" / search with a .srt/.vtt
-                Picker("", selection: $mode) { ForEach(Mode.allCases.filter { $0 != .subtitles || mode == .subtitles }) { Text($0.rawValue).tag($0) } }
+                Picker("", selection: $mode) { ForEach(Mode.allCases.filter { $0 != .subtitles || mode == .subtitles }) { Text(L($0.rawValue)).tag($0) } }
                     .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 420)
                 if mode != .subtitles {
                     HStack {
-                        Button("Scegli file o cartella…") { picking = true }
+                        Button(L("Scegli file o cartella…")) { picking = true }
                         if loading { ProgressView().controlSize(.small) }
-                        Text(infos.isEmpty ? "" : "\(infos.count) file\(failed > 0 ? " · \(failed) non leggibili" : "")").foregroundStyle(.secondary)
+                        Text(infos.isEmpty ? "" : LF("%@ file", infos.count) + (failed > 0 ? LF(" · %@ non leggibili", failed) : "")).foregroundStyle(.secondary)
                     }
                     if Doctor.ffprobePath == nil {
-                        Text("Serve ffprobe (brew install ffmpeg) per leggere i file.").foregroundStyle(Theme.orange).card()
+                        Text(L("Serve ffprobe (brew install ffmpeg) per leggere i file.")).foregroundStyle(Theme.orange).card()
                     }
                 }
                 switch mode {
@@ -57,13 +57,13 @@ struct InspectorView: View {
                 case .proxy: ProxyPane(infos: infos)
                 }
                 if infos.isEmpty && mode != .subtitles {
-                    Text("Scegli uno o più file video o una cartella: li leggo senza modificarli.").foregroundStyle(.secondary)
+                    Text(L("Scegli uno o più file video o una cartella: li leggo senza modificarli.")).foregroundStyle(.secondary)
                 }
             }
             .padding(16)
         }
         .spacePreview(infos.map(\.url))
-        .navigationTitle("Controlla il video finito")
+        .navigationTitle(L("Controlla il video finito"))
         .onChange(of: model.openRequest, initial: true) { _, r in
             guard let r, let entry = ToolCatalog.entry(r.toolID), case .inspector(let raw) = entry.target,
                   let m = Mode(rawValue: raw) else { return }
@@ -100,22 +100,22 @@ private struct DetailsCard: View {
         let anomalies = Doctor.technicalAnomalies(info)
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text(info.url.lastPathComponent).font(.headline)
+                Text(L(info.url.lastPathComponent)).font(.headline)
                 Spacer()
                 Text(formatBytes(info.size)).foregroundStyle(.secondary)
             }
             Text("\(info.container) · \(String(format: "%.1f", info.duration)) s").foregroundStyle(.secondary)
             if let v = info.video {
-                Text("Video: \(v.codec) \(v.displayWidth)×\(v.displayHeight) · \(String(format: "%g", v.fps)) fps\(v.isVFR ? " (variabile)" : "") · \(v.bitDepth) bit \(v.chroma)\(v.isHDR ? " · HDR" : "")")
+                Text("Video: \(v.codec) \(v.displayWidth)×\(v.displayHeight) · \(String(format: "%g", v.fps)) fps\(v.isVFR ? L(" (variabile)") : "") · \(v.bitDepth) bit \(v.chroma)\(v.isHDR ? " · HDR" : "")")
             } else {
-                Text("Nessun video: solo audio.")
+                Text(L("Nessun video: solo audio."))
             }
             ForEach(Array(info.audio.enumerated()), id: \.offset) { _, a in
-                Text("Audio: \(a.codec) · \(a.channels) canali · \(a.sampleRate) Hz")
+                Text(LF("Audio: %@ · %@ canali · %@ Hz", a.codec, a.channels, a.sampleRate))
             }
             ForEach(anomalies, id: \.self) { Label($0, systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange) }
             if info.video?.isVFR == true {
-                Text("Frame rate variabile: è una stima dai dati del file, non una certezza. Può dare problemi di sync nel montaggio.").font(.caption).foregroundStyle(.secondary)
+                Text(L("Frame rate variabile: è una stima dai dati del file, non una certezza. Può dare problemi di sync nel montaggio.")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .card()
@@ -134,13 +134,13 @@ private struct AudioCard: View {
                 EmptyView()
             } else if let results {
                 ForEach(Array(results.enumerated()), id: \.offset) { _, r in
-                    Label(r.detail, systemImage: r.ok ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                    Label(L(r.detail), systemImage: r.ok ? "speaker.wave.2.fill" : "speaker.slash.fill")
                         .foregroundStyle(r.ok ? Color.secondary : Theme.orange)
                 }
             } else if let failed {
-                Text(failed).foregroundStyle(.secondary)
+                Text(L(failed)).foregroundStyle(.secondary)
             } else {
-                HStack { ProgressView().controlSize(.small); Text("Misuro volume e silenzi…").foregroundStyle(.secondary) }
+                HStack { ProgressView().controlSize(.small); Text(L("Misuro volume e silenzi…")).foregroundStyle(.secondary) }
             }
         }
         .task(id: info.url) {
@@ -162,21 +162,21 @@ private struct DeliveryPane: View {
     private var specs: [DeliverySpec] { Doctor.deliveryProfiles + Doctor.loadCustomSpecs() }
 
     var body: some View {
-        Picker("Dove lo consegni?", selection: $profile) { ForEach(specs) { Text($0.name).tag($0.name) } }.frame(maxWidth: 360)
-        Text("I profili sono indicativi: controlla sempre le specifiche aggiornate della piattaforma. Profili tuoi: aggiungili in delivery-specs.json nella cartella di FCP Toolbox.")
+        Picker(L("Dove lo consegni?"), selection: $profile) { ForEach(specs) { Text(L($0.name)).tag($0.name) } }.frame(maxWidth: 360)
+        Text(L("I profili sono indicativi: controlla sempre le specifiche aggiornate della piattaforma. Profili tuoi: aggiungili in delivery-specs.json nella cartella di FCP Toolbox."))
             .font(.caption).foregroundStyle(.secondary)
         if let spec = specs.first(where: { $0.name == profile }) {
             ForEach(infos) { m in
                 let results = Doctor.checkDelivery(m, spec: spec)
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
-                        Text(m.url.lastPathComponent).font(.headline)
+                        Text(L(m.url.lastPathComponent)).font(.headline)
                         Spacer()
-                        Text(results.allSatisfy(\.ok) ? "Va bene" : "\(results.filter { !$0.ok }.count) problemi")
+                        Text(results.allSatisfy(\.ok) ? L("Va bene") : LF("%@ problemi", results.filter { !$0.ok }.count))
                             .foregroundStyle(results.allSatisfy(\.ok) ? Theme.green : Theme.orange)
                     }
                     ForEach(results) { r in
-                        Label(r.detail, systemImage: r.ok ? "checkmark.circle.fill" : "xmark.circle.fill")
+                        Label(L(r.detail), systemImage: r.ok ? "checkmark.circle.fill" : "xmark.circle.fill")
                             .foregroundStyle(r.ok ? Color.secondary : Theme.orange)
                     }
                     AudioCard(info: m)
@@ -197,21 +197,21 @@ private struct SubtitlesPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Controllo sottotitoli").font(.headline)
+            Text(L("Controllo sottotitoli")).font(.headline)
             HStack {
-                Button("Apri sottotitoli (.srt / .vtt)…") { pickingSubs = true }
-                if let source { Text(source.lastPathComponent).foregroundStyle(.secondary) }
+                Button(L("Apri sottotitoli (.srt / .vtt)…")) { pickingSubs = true }
+                if let source { Text(L(source.lastPathComponent)).foregroundStyle(.secondary) }
             }
-            if let message { Text(message).foregroundStyle(.secondary) }
+            if let message { Text(L(message)).foregroundStyle(.secondary) }
             if !cues.isEmpty {
-                Text("\(cues.count) battute · \(issues.isEmpty ? "nessun problema di leggibilità" : "\(issues.count) da sistemare")").font(.headline)
-                ForEach(issues) { Label("#\($0.cue) \($0.kind): \($0.detail)", systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange) }
+                Text(LF("%@ battute · %@", cues.count, issues.isEmpty ? L("nessun problema di leggibilità") : LF("%@ da sistemare", issues.count))).font(.headline)
+                ForEach(issues) { Label("#\($0.cue) \(L($0.kind)): \(L($0.detail))", systemImage: "exclamationmark.triangle.fill").foregroundStyle(Theme.orange) }
                 HStack {
-                    Button("Sistema punteggiatura (salva copia)") { save(Doctor.fixPunctuation(cues), suffix: " corretto", ext: "srt") }
-                    Button("Salva come VTT") { save(cues, suffix: "", ext: "vtt") }
-                    Button("Salva come SRT") { save(cues, suffix: "", ext: "srt") }
+                    Button(L("Sistema punteggiatura (salva copia)")) { save(Doctor.fixPunctuation(cues), suffix: " corretto", ext: "srt") }
+                    Button(L("Salva come VTT")) { save(cues, suffix: "", ext: "vtt") }
+                    Button(L("Salva come SRT")) { save(cues, suffix: "", ext: "srt") }
                 }
-                Text("Le correzioni sistemano spazi e maiuscole; non riscrivono le parole e non spostano i tempi.").font(.caption).foregroundStyle(.secondary)
+                Text(L("Le correzioni sistemano spazi e maiuscole; non riscrivono le parole e non spostano i tempi.")).font(.caption).foregroundStyle(.secondary)
             }
         }
         .card()
@@ -223,19 +223,19 @@ private struct SubtitlesPane: View {
 
     private func open(_ u: URL) {
         _ = u.startAccessingSecurityScopedResource()
-        guard let text = try? String(contentsOf: u, encoding: .utf8) else { message = "Non riesco a leggere il file."; return }
+        guard let text = try? String(contentsOf: u, encoding: .utf8) else { message = L("Non riesco a leggere il file."); return }
         cues = u.pathExtension.lowercased() == "vtt" ? Doctor.parseVTT(text) : Doctor.parseSRT(text)
         issues = Doctor.checkSubtitles(cues)
         source = u
-        message = cues.isEmpty ? "Non ho trovato battute in questo file." : nil
+        message = cues.isEmpty ? L("Non ho trovato battute in questo file.") : nil
     }
 
     private func save(_ list: [SubtitleCue], suffix: String, ext: String) {
         guard let source else { return }
         let url = freshURL(source.deletingLastPathComponent(), source.deletingPathExtension().lastPathComponent + suffix, ext)
         let text = ext == "vtt" ? Doctor.renderVTT(list) : Doctor.renderSRT(list)
-        do { try text.write(to: url, atomically: true, encoding: .utf8); message = "Salvato: \(url.lastPathComponent)" }
-        catch { message = "Non riesco a salvare: \(error.localizedDescription)" }
+        do { try text.write(to: url, atomically: true, encoding: .utf8); message = LF("Salvato: %@", url.lastPathComponent) }
+        catch { message = LF("Non riesco a salvare: %@", error.localizedDescription) }
     }
 }
 
@@ -272,32 +272,32 @@ private struct ProxyPane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Crea proxy leggeri dei file scelti. Gli originali non vengono toccati.").foregroundStyle(.secondary)
+            Text(L("Crea proxy leggeri dei file scelti. Gli originali non vengono toccati.")).foregroundStyle(.secondary)
             HStack {
-                Picker("Formato", selection: $codec) { ForEach(ProxyCodec.allCases, id: \.self) { Text($0.rawValue).tag($0) } }.fixedSize()
-                Picker("Altezza", selection: $height) { ForEach([360, 540, 720], id: \.self) { Text("\($0) px").tag($0) } }.fixedSize()
-                Button(destination.map { "In: \($0.lastPathComponent)" } ?? "Scegli la cartella dei proxy…") { destination = pickFolder("Dove salvo i proxy?") }
+                Picker(L("Formato"), selection: $codec) { ForEach(ProxyCodec.allCases, id: \.self) { Text(L($0.rawValue)).tag($0) } }.fixedSize()
+                Picker(L("Altezza"), selection: $height) { ForEach([360, 540, 720], id: \.self) { Text(LF("%@ px", $0)).tag($0) } }.fixedSize()
+                Button(destination.map { LF("In: %@", $0.lastPathComponent) } ?? L("Scegli la cartella dei proxy…")) { destination = pickFolder("Dove salvo i proxy?") }
             }
             HStack {
-                Button("Crea \(infos.count) proxy") {
+                Button(LF("Crea %@ proxy", infos.count)) {
                     if let destination { job.start(infos.map(\.url), options: ProxyOptions(codec: codec, height: height, destination: destination)) }
                 }
                 .disabled(infos.isEmpty || destination == nil || job.running)
                 if job.running {
-                    Button(job.paused ? "Riprendi" : "Pausa") { job.togglePause() }
-                    Button("Annulla", role: .destructive) { job.cancel() }
+                    Button(job.paused ? L("Riprendi") : L("Pausa")) { job.togglePause() }
+                    Button(L("Annulla"), role: .destructive) { job.cancel() }
                     ProgressView(value: job.fraction).frame(width: 160)
-                    Text("file \(job.index + 1) di \(infos.count)").foregroundStyle(.secondary)
+                    Text(LF("file %@ di %@", job.index + 1, infos.count)).foregroundStyle(.secondary)
                 }
             }
             ForEach(Array(job.results.enumerated()), id: \.offset) { _, r in
-                Label(r.output.map { "\($0.lastPathComponent) · " + (r.verified ? "creato e controllato" : r.problems.joined(separator: " ")) }
-                      ?? "\(r.source.lastPathComponent): \(r.problems.joined(separator: " "))",
+                Label(r.output.map { "\($0.lastPathComponent) · " + (r.verified ? L("creato e controllato") : r.problems.map { L($0) }.joined(separator: " ")) }
+                      ?? "\(r.source.lastPathComponent): \(r.problems.map { L($0) }.joined(separator: " "))",
                       systemImage: r.verified ? "checkmark.circle.fill" : "xmark.circle.fill")
                     .foregroundStyle(r.verified ? Color.secondary : Theme.orange)
             }
             if !job.results.isEmpty {
-                Text("Controllato: apertura, durata, altezza, codec e audio. Che Final Cut li colleghi si vede solo in Final Cut: non posso verificarlo da qui.")
+                Text(L("Controllato: apertura, durata, altezza, codec e audio. Che Final Cut li colleghi si vede solo in Final Cut: non posso verificarlo da qui."))
                     .font(.caption).foregroundStyle(.secondary)
             }
         }
@@ -340,17 +340,17 @@ struct ManageView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Picker("", selection: $mode) { ForEach(Mode.allCases) { Text($0.rawValue).tag($0) } }
+                Picker("", selection: $mode) { ForEach(Mode.allCases) { Text(L($0.rawValue)).tag($0) } }
                     .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 520)
                     .onChange(of: mode) { _, _ in plan = []; message = nil }
                 HStack {
-                    Button(folder.map { "Cartella: \($0.lastPathComponent)" } ?? "Scegli la cartella…") { folder = pickFolder("Quale cartella?"); reset() }
+                    Button(folder.map { LF("Cartella: %@", $0.lastPathComponent) } ?? L("Scegli la cartella…")) { folder = pickFolder("Quale cartella?"); reset() }
                     if mode == .compare {
-                        Button(other.map { "Con: \($0.lastPathComponent)" } ?? "Scegli la seconda cartella…") { other = pickFolder("Con quale cartella la confronto?") }
+                        Button(other.map { LF("Con: %@", $0.lastPathComponent) } ?? L("Scegli la seconda cartella…")) { other = pickFolder("Con quale cartella la confronto?") }
                     }
                     if busy { ProgressView().controlSize(.small) }
                 }
-                if let message { Text(message).foregroundStyle(.secondary) }
+                if let message { Text(L(message)).foregroundStyle(.secondary) }
                 if folder != nil {
                     switch mode {
                     case .duplicates: duplicates
@@ -362,10 +362,10 @@ struct ManageView: View {
                 }
                 if let last = Doctor.lastMoveLabel() {
                     HStack {
-                        Text("Ultima operazione: \(last)").foregroundStyle(.secondary)
-                        Button("Annulla ultima operazione") {
+                        Text(LF("Ultima operazione: %@", L(last))).foregroundStyle(.secondary)
+                        Button(L("Annulla ultima operazione")) {
                             let r = Doctor.undoLastMoves()
-                            message = "Ripristinati \(r.restored) file." + (r.failures.isEmpty ? "" : " Non riuscito: \(r.failures.joined(separator: "; "))")
+                            message = LF("Ripristinati %@ file.", r.restored) + (r.failures.isEmpty ? "" : " " + LF("Non riuscito: %@", r.failures.joined(separator: "; ")))
                             plan = []
                         }
                     }
@@ -374,25 +374,25 @@ struct ManageView: View {
             }
             .padding(16)
         }
-        .navigationTitle("Gestione media")
-        .confirmationDialog("Spostare nel Cestino \(toTrash?.lastPathComponent ?? "")?", isPresented: Binding(
+        .navigationTitle(L("Gestione media"))
+        .confirmationDialog(LF("Spostare nel Cestino %@?", toTrash?.lastPathComponent ?? ""), isPresented: Binding(
             get: { toTrash != nil }, set: { if !$0 { toTrash = nil } }), titleVisibility: .visible) {
-            Button("Sposta nel Cestino", role: .destructive) {
+            Button(L("Sposta nel Cestino"), role: .destructive) {
                 if let u = toTrash, let folder {
                     let r = Doctor.trash([u], within: [folder])
-                    message = r.moved == 1 ? "Nel Cestino (lo recuperi da lì)." : r.failures.joined(separator: " ")
+                    message = r.moved == 1 ? L("Nel Cestino (lo recuperi da lì).") : r.failures.joined(separator: " ")
                     scanDuplicates()
                 }
                 toTrash = nil
             }
-        } message: { Text("Resta recuperabile dal Cestino finché non lo svuoti.") }
-        .confirmationDialog("Applicare \(plan.filter { $0.conflict == nil }.count) spostamenti?", isPresented: $confirmApply, titleVisibility: .visible) {
-            Button("Applica") {
+        } message: { Text(L("Resta recuperabile dal Cestino finché non lo svuoti.")) }
+        .confirmationDialog(LF("Applicare %@ spostamenti?", plan.filter { $0.conflict == nil }.count), isPresented: $confirmApply, titleVisibility: .visible) {
+            Button(L("Applica")) {
                 let r = Doctor.applyMoves(plan.filter { $0.conflict == nil }, label: mode == .rename ? "Rinomina in \(folder?.lastPathComponent ?? "")" : "Organizza \(folder?.lastPathComponent ?? "")")
-                message = "Fatto: \(r.done) file." + (r.failures.isEmpty ? " Puoi annullare." : " Problemi: \(r.failures.joined(separator: "; "))")
+                message = LF("Fatto: %@ file.", r.done) + (r.failures.isEmpty ? " " + L("Puoi annullare.") : " " + LF("Problemi: %@", r.failures.joined(separator: "; ")))
                 plan = []
             }
-        } message: { Text("I file non vengono cancellati e non ne sovrascrivo nessuno. Puoi annullare con “Annulla ultima operazione”.") }
+        } message: { Text(L("I file non vengono cancellati e non ne sovrascrivo nessuno. Puoi annullare con “Annulla ultima operazione”.")) }
     }
 
     private func reset() { identical = []; versions = []; scanned = false; plan = []; diff = nil; check = nil; message = nil }
@@ -401,28 +401,28 @@ struct ManageView: View {
 
     // MARK: duplicates
     @ViewBuilder private var duplicates: some View {
-        Button("Cerca duplicati") { scanDuplicates() }.disabled(busy)
+        Button(L("Cerca duplicati")) { scanDuplicates() }.disabled(busy)
         if scanned {
-            Text(identical.isEmpty ? "Nessun file identico." : "\(identical.count) gruppi di file identici · \(formatBytes(identical.reduce(0) { $0 + $1.wasted })) recuperabili")
+            Text(identical.isEmpty ? L("Nessun file identico.") : LF("%@ gruppi di file identici · %@ recuperabili", identical.count, formatBytes(identical.reduce(0) { $0 + $1.wasted })))
                 .font(.headline)
             ForEach(identical) { g in
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Identici byte per byte · \(formatBytes(g.size)) ciascuno").font(.headline)
+                    Text(LF("Identici byte per byte · %@ ciascuno", formatBytes(g.size))).font(.headline)
                     ForEach(g.files, id: \.self) { f in
                         HStack {
                             Text(f.path.replacingOccurrences(of: folder?.path ?? "", with: "…")).lineLimit(1).truncationMode(.middle)
                             Spacer()
-                            Button("Cestina…") { toTrash = f }.disabled(isOriginalMedia(f))
-                                .help(isOriginalMedia(f) ? "I media originali di Final Cut non si toccano da qui" : "Sposta nel Cestino")
+                            Button(L("Cestina…")) { toTrash = f }.disabled(isOriginalMedia(f))
+                                .help(isOriginalMedia(f) ? L("I media originali di Final Cut non si toccano da qui") : L("Sposta nel Cestino"))
                         }
                     }
                 }
                 .card()
             }
             if !versions.isEmpty {
-                Text("Versioni: stesso nome ma contenuto diverso. Non sono duplicati, non li propongo per l'eliminazione.").font(.headline)
+                Text(L("Versioni: stesso nome ma contenuto diverso. Non sono duplicati, non li propongo per l'eliminazione.")).font(.headline)
                 ForEach(versions) { v in
-                    VStack(alignment: .leading) { Text(v.stem).font(.headline); ForEach(v.files, id: \.self) { Text($0.lastPathComponent).foregroundStyle(.secondary) } }.card()
+                    VStack(alignment: .leading) { Text(L(v.stem)).font(.headline); ForEach(v.files, id: \.self) { Text(L($0.lastPathComponent)).foregroundStyle(.secondary) } }.card()
                 }
             }
         }
@@ -440,24 +440,24 @@ struct ManageView: View {
     // MARK: rename / organize
     @ViewBuilder private var rename: some View {
         HStack {
-            TextField("Modello: {name} {n:3} {date}", text: $template).textFieldStyle(.roundedBorder)
-            TextField("Trova", text: $find).textFieldStyle(.roundedBorder)
-            TextField("Sostituisci", text: $replace).textFieldStyle(.roundedBorder)
-            Stepper("Parti da \(startAt)", value: $startAt, in: 0...9999).fixedSize()
+            TextField(L("Modello: {name} {n:3} {date}"), text: $template).textFieldStyle(.roundedBorder)
+            TextField(L("Trova"), text: $find).textFieldStyle(.roundedBorder)
+            TextField(L("Sostituisci"), text: $replace).textFieldStyle(.roundedBorder)
+            Stepper(LF("Parti da %@", startAt), value: $startAt, in: 0...9999).fixedSize()
         }
-        Button("Anteprima") {
+        Button(L("Anteprima")) {
             guard let folder else { return }
             let files = ((try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil, options: .skipsHiddenFiles)) ?? [])
                 .filter { Doctor.mediaExtensions.contains($0.pathExtension.lowercased()) }
             plan = Doctor.renamePlan(files, template: template, find: find, replace: replace, startAt: startAt)
-            message = plan.isEmpty ? "Nessun file media in questa cartella." : nil
+            message = plan.isEmpty ? L("Nessun file media in questa cartella.") : nil
         }
         planView
     }
 
     @ViewBuilder private var organize: some View {
-        Picker("Ordina per", selection: $organizeBy) { Text("Tipo di file").tag(OrganizeBy.type); Text("Mese").tag(OrganizeBy.date) }.fixedSize()
-        Button("Anteprima") { if let folder { plan = Doctor.organizePlan(folder, by: organizeBy); message = plan.isEmpty ? "Nessun file da ordinare." : nil } }
+        Picker(L("Ordina per"), selection: $organizeBy) { Text(L("Tipo di file")).tag(OrganizeBy.type); Text(L("Mese")).tag(OrganizeBy.date) }.fixedSize()
+        Button(L("Anteprima")) { if let folder { plan = Doctor.organizePlan(folder, by: organizeBy); message = plan.isEmpty ? L("Nessun file da ordinare.") : nil } }
         planView
     }
 
@@ -465,60 +465,60 @@ struct ManageView: View {
         if !plan.isEmpty {
             ForEach(plan) { s in
                 HStack {
-                    Text(s.from.lastPathComponent)
+                    Text(L(s.from.lastPathComponent))
                     Image(systemName: "arrow.right").foregroundStyle(.secondary)
                     Text(s.to.path.replacingOccurrences(of: folder?.path ?? "", with: "…")).foregroundStyle(s.conflict == nil ? Color.primary : Theme.orange)
                     if let c = s.conflict { Text("— \(c)").font(.caption).foregroundStyle(Theme.orange) }
                 }
             }
-            Button("Applica…") { confirmApply = true }.disabled(plan.allSatisfy { $0.conflict != nil })
+            Button(L("Applica…")) { confirmApply = true }.disabled(plan.allSatisfy { $0.conflict != nil })
         }
     }
 
     // MARK: compare / integrity
     @ViewBuilder private var compare: some View {
-        Button("Confronta") {
-            guard let folder, let other else { message = "Scegli due cartelle."; return }
+        Button(L("Confronta")) {
+            guard let folder, let other else { message = L("Scegli due cartelle."); return }
             busy = true
             Task { diff = await Task.detached(priority: .utility) { Doctor.compareFolders(folder, other) }.value; busy = false }
         }
         .disabled(busy)
         if let d = diff {
-            Text("\(d.same) file uguali").font(.headline)
-            list("Solo nella prima", d.onlyInA); list("Solo nella seconda", d.onlyInB); list("Diversi", d.different)
+            Text(LF("%@ file uguali", d.same)).font(.headline)
+            list(L("Solo nella prima"), d.onlyInA); list(L("Solo nella seconda"), d.onlyInB); list(L("Diversi"), d.different)
         }
     }
 
     @ViewBuilder private var integrity: some View {
-        Text("Registra l'impronta (SHA-256) di ogni file: dopo una copia o un trasferimento, controlli che nulla sia cambiato o sparito.").foregroundStyle(.secondary)
+        Text(L("Registra l'impronta (SHA-256) di ogni file: dopo una copia o un trasferimento, controlli che nulla sia cambiato o sparito.")).foregroundStyle(.secondary)
         HStack {
-            Button("Registra impronta") {
+            Button(L("Registra impronta")) {
                 guard let folder else { return }
                 busy = true
-                Task { let n = await Task.detached(priority: .utility) { Doctor.writeManifest(for: folder) }.value; message = "Impronta di \(n) file registrata."; busy = false }
+                Task { let n = await Task.detached(priority: .utility) { Doctor.writeManifest(for: folder) }.value; message = LF("Impronta di %@ file registrata.", n); busy = false }
             }
-            Button("Verifica") {
+            Button(L("Verifica")) {
                 guard let folder else { return }
                 busy = true
                 Task {
                     check = await Task.detached(priority: .utility) { Doctor.verifyManifest(for: folder) }.value
-                    message = check == nil ? "Nessuna impronta registrata per questa cartella." : nil
+                    message = check == nil ? L("Nessuna impronta registrata per questa cartella.") : nil
                     busy = false
                 }
             }
         }
         .disabled(busy)
         if let c = check {
-            Text(c.ok ? "Tutto uguale a quando hai registrato l'impronta." : "Qualcosa è cambiato.").font(.headline)
+            Text(c.ok ? L("Tutto uguale a quando hai registrato l'impronta.") : L("Qualcosa è cambiato.")).font(.headline)
                 .foregroundStyle(c.ok ? Theme.green : Theme.orange)
-            list("Modificati", c.changed); list("Mancanti", c.missing); list("Nuovi", c.new)
+            list(L("Modificati"), c.changed); list(L("Mancanti"), c.missing); list(L("Nuovi"), c.new)
         }
     }
 
     @ViewBuilder private func list(_ title: String, _ items: [String]) -> some View {
         if !items.isEmpty {
             DisclosureGroup("\(title) (\(items.count))") {
-                VStack(alignment: .leading, spacing: 2) { ForEach(items.prefix(200), id: \.self) { Text($0).font(.system(.caption, design: .monospaced)) } }
+                VStack(alignment: .leading, spacing: 2) { ForEach(items.prefix(200), id: \.self) { Text(L($0)).font(.system(.caption, design: .monospaced)) } }
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         }

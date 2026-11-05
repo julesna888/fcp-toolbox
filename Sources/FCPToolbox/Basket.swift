@@ -49,19 +49,19 @@ struct BasketView: View {
         VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Image(systemName: "tray.full.fill").foregroundStyle(Theme.gradient)
-                Text("Cesto").font(.headline)
+                Text(L("Cesto")).font(.headline)
                 Text("\(basket.items.count)").foregroundStyle(.secondary).monospacedDigit()
                 Spacer()
                 if !basket.items.isEmpty {
-                    Button("Svuota") { basket.clear() }.buttonStyle(.link)
-                        .help("Toglie i file dal cesto. Non li cancella.")
+                    Button(L("Svuota")) { basket.clear() }.buttonStyle(.link)
+                        .help(L("Toglie i file dal cesto. Non li cancella."))
                 }
             }
             if basket.items.isEmpty {
                 VStack(spacing: 6) {
                     Image(systemName: "arrow.down.doc").font(.title)
-                    Text("Trascina qui file e cartelle").bold()
-                    Text("Restano dove sono. Li ritrovi qui, pronti da trascinare fuori.")
+                    Text(L("Trascina qui file e cartelle")).bold()
+                    Text(L("Restano dove sono. Li ritrovi qui, pronti da trascinare fuori."))
                         .font(.callout).foregroundStyle(.secondary).multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -76,17 +76,17 @@ struct BasketView: View {
             ForEach(model.volumes.prefix(3)) { v in
                 HStack {
                     Image(systemName: v.internalDisk ? "internaldrive" : "externaldrive")
-                    Text(v.name).lineLimit(1)
+                    Text(L(v.name)).lineLimit(1)
                     Spacer()
-                    Text("\(formatBytes(v.free)) liberi").monospacedDigit()
+                    Text(LF("%@ liberi", formatBytes(v.free))).monospacedDigit()
                         .foregroundStyle(v.free < Int64(model.lowSpaceGB) * 1_000_000_000 ? Theme.orange : Color.secondary)
                 }
                 .font(.caption)
             }
             HStack {
-                Button("Apri FCP Toolbox") { openMain() }
+                Button(L("Apri FCP Toolbox")) { openMain() }
                 Spacer()
-                Button("Esci") { quit() }
+                Button(L("Esci")) { quit() }
             }
         }
         .padding(14)
@@ -104,15 +104,15 @@ struct BasketView: View {
         HStack(spacing: 8) {
             Image(nsImage: NSWorkspace.shared.icon(forFile: url.path)).resizable().frame(width: 26, height: 26)
             VStack(alignment: .leading, spacing: 0) {
-                Text(url.lastPathComponent).lineLimit(1).truncationMode(.middle)
+                Text(L(url.lastPathComponent)).lineLimit(1).truncationMode(.middle)
                 Text(url.deletingLastPathComponent().lastPathComponent).font(.caption).foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             Spacer()
             Button { reveal([url]) } label: { Image(systemName: "magnifyingglass") }
-                .buttonStyle(.plain).help("Mostra nel Finder")
+                .buttonStyle(.plain).help(L("Mostra nel Finder"))
             Button { basket.remove(url) } label: { Image(systemName: "xmark.circle.fill") }
-                .buttonStyle(.plain).foregroundStyle(.secondary).help("Toglie dal cesto")
+                .buttonStyle(.plain).foregroundStyle(.secondary).help(L("Toglie dal cesto"))
         }
         .padding(6)
         .background(Theme.panel, in: RoundedRectangle(cornerRadius: 8))

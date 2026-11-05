@@ -79,15 +79,15 @@ struct WelcomeView: View {
                     .font(.system(size: 22, weight: .semibold)).foregroundStyle(.white)
                     .frame(width: 48, height: 48)
                     .background(slide.tint.gradient, in: RoundedRectangle(cornerRadius: 12))
-                Text(slide.title).font(.system(size: 28, weight: .bold, design: .rounded))
-                Text(slide.lead).font(.title3).foregroundStyle(.secondary)
+                Text(L(slide.title)).font(.system(size: 28, weight: .bold, design: .rounded))
+                Text(L(slide.lead)).font(.title3).foregroundStyle(.secondary)
                 VStack(spacing: 0) {
                     ForEach(slide.points) { p in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: p.icon).font(.title3).foregroundStyle(slide.tint).frame(width: 28)
                             VStack(alignment: .leading, spacing: 2) {
-                                Text(p.title).font(.headline)
-                                Text(p.text).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+                                Text(L(p.title)).font(.headline)
+                                Text(L(p.text)).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
                             }
                             Spacer(minLength: 0)
                         }
@@ -105,17 +105,17 @@ struct WelcomeView: View {
 
             Divider()
             HStack {
-                Button("Salta") { finish() }.buttonStyle(.plain).foregroundStyle(.secondary).opacity(last ? 0 : 1)
+                Button(L("Salta")) { finish() }.buttonStyle(.plain).foregroundStyle(.secondary).opacity(last ? 0 : 1)
                 Spacer()
                 HStack(spacing: 6) {
                     ForEach(0..<Self.slides.count, id: \.self) { i in
                         Circle().fill(i == index ? slide.tint : Color.white.opacity(0.2)).frame(width: 7, height: 7)
                     }
                 }
-                .accessibilityLabel("Slide \(index + 1) di \(Self.slides.count)")
+                .accessibilityLabel(LF("Slide %@ di %@", index + 1, Self.slides.count))
                 Spacer()
-                Button("Indietro") { go(-1) }.disabled(index == 0)
-                Button(last ? "Inizia" : "Avanti") { last ? finish() : go(1) }
+                Button(L("Indietro")) { go(-1) }.disabled(index == 0)
+                Button(last ? L("Inizia") : L("Avanti")) { last ? finish() : go(1) }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
             }

@@ -66,7 +66,7 @@ Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti a
 | Librerie esterne | nessuna (solo Swift e SwiftUI) |
 | Programmi opzionali | `ffmpeg` per gli strumenti video, `yt-dlp` per «Scarica da link» (gratuiti, l'app spiega come installarli) |
 | Componente aggiuntivo | «Cerca nei filmati» e «Descrivi clip» scaricano circa 765 MB, solo se li attivi |
-| Lingue | italiano e inglese (l'inglese per ora copre barra laterale e pagina Strumenti) |
+| Lingue | italiano e inglese (cambio con la bandierina in alto) |
 | Codice | circa 11.400 righe in 68 file Swift, 173 test automatici |
 | Firma | semplice, senza notarizzazione Apple |
 | Licenza | MIT |

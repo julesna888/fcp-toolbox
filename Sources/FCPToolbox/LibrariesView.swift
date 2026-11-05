@@ -66,16 +66,16 @@ struct TrashConfirmation: ViewModifier {
 
     func body(content: Content) -> some View {
         content.confirmationDialog(
-            "Spostare \(pending.count) \(pending.count == 1 ? "elemento" : "elementi") nel Cestino?",
+            LF("Spostare %@ %@ nel Cestino?", pending.count, pending.count == 1 ? L("elemento") : L("elementi")),
             isPresented: Binding(get: { !pending.isEmpty }, set: { if !$0 { pending = [] } }),
             titleVisibility: .visible
         ) {
-            Button("Sposta nel Cestino", role: .destructive) {
+            Button(L("Sposta nel Cestino"), role: .destructive) {
                 model.trashItems(pending)
                 pending = []
             }
         } message: {
-            Text(([warning] + pending.prefix(4).map(\.lastPathComponent) + (pending.count > 4 ? ["…"] : []))
+            Text(([L(warning)] + pending.prefix(4).map(\.lastPathComponent) + (pending.count > 4 ? ["…"] : []))
                 .filter { !$0.isEmpty }.joined(separator: "\n"))
         }
     }
@@ -133,14 +133,14 @@ struct LibrariesView: View {
     }
 
     private func warning(for nodes: [Node], original: Bool) -> String {
-        if original { return "Cancelli i file video veri: le librerie che li usano li troveranno mancanti." }
+        if original { return L("Cancelli i file video veri: le librerie che li usano li troveranno mancanti.") }
         if nodes.contains(where: { $0.kind == .library }) {
-            return "Cancelli l'intera libreria. I media collegati fuori dalla libreria restano dove sono."
+            return L("Cancelli l'intera libreria. I media collegati fuori dalla libreria restano dove sono.")
         }
         if nodes.contains(where: { $0.kind == .event || $0.kind == .project || $0.kind == .group }) {
-            return "Cancellare eventi e progetti da fuori Final Cut può lasciare la libreria incoerente. Fai prima un backup."
+            return L("Cancellare eventi e progetti da fuori Final Cut può lasciare la libreria incoerente. Fai prima un backup.")
         }
-        return "Le clip tolte dalla libreria non si vedranno più in Final Cut, i file video restano su disco."
+        return L("Le clip tolte dalla libreria non si vedranno più in Final Cut, i file video restano su disco.")
     }
 
     var body: some View {
@@ -153,21 +153,21 @@ struct LibrariesView: View {
                     header
                     Divider()
                     Table(sorted(filtered(model.tree)), children: \.children, selection: $selection, sortOrder: $sort) {
-                        TableColumn("Nome", value: \.name) { n in Label(n.name, systemImage: icon(n.kind)) }
+                        TableColumn(L("Nome"), value: \.name) { n in Label(n.name, systemImage: icon(n.kind)) }
                             .width(min: 240, ideal: 320)
-                        TableColumn("Peso", value: \.size) { Text(formatBytes($0.size)).monospacedDigit() }.width(90)
-                        TableColumn("Fuori dalla libreria", value: \.external) {
+                        TableColumn(L("Peso"), value: \.size) { Text(formatBytes($0.size)).monospacedDigit() }.width(90)
+                        TableColumn(L("Fuori dalla libreria"), value: \.external) {
                             Text($0.external > 0 ? formatBytes($0.external) : "—").monospacedDigit()
                                 .foregroundStyle(Color.secondary)
                         }.width(min: 120, ideal: 150)
-                        TableColumn("Media", value: \.media) {
+                        TableColumn(L("Media"), value: \.media) {
                             Text($0.media > 0 ? "\($0.media)" : "—").monospacedDigit().foregroundStyle(Color.secondary)
                         }.width(70)
-                        TableColumn("Mancanti", value: \.missing) { n in
+                        TableColumn(L("Mancanti"), value: \.missing) { n in
                             Text(n.missing > 0 ? "\(n.missing)" : "—").monospacedDigit()
                                 .foregroundStyle(n.missing > 0 ? Color.orange : Color.secondary)
                         }.width(80)
-                        TableColumn("Modificato", value: \.modified) { n in
+                        TableColumn(L("Modificato"), value: \.modified) { n in
                             Text(n.modified == .distantPast ? "—" : n.modified.formatted(date: .abbreviated, time: .omitted))
                                 .foregroundStyle(Color.secondary)
                         }.width(min: 100, ideal: 120)
@@ -175,22 +175,22 @@ struct LibrariesView: View {
                     .contextMenu(forSelectionType: Node.ID.self) { ids in
                         let nodes = flat(model.tree).filter { ids.contains($0.id) }
                         let originals = nodes.compactMap(\.preview)
-                        Button("Mostra nel Finder") { reveal(nodes.map { $0.preview ?? $0.url }) }
+                        Button(L("Mostra nel Finder")) { reveal(nodes.map { $0.preview ?? $0.url }) }
                         if nodes.count == 1, nodes[0].kind == .library {
-                            Button("Apri in Final Cut Pro") { NSWorkspace.shared.open(nodes[0].url) }
+                            Button(L("Apri in Final Cut Pro")) { NSWorkspace.shared.open(nodes[0].url) }
                         }
-                        Button("Copia il percorso") {
+                        Button(L("Copia il percorso")) {
                             NSPasteboard.general.clearContents()
                             NSPasteboard.general.setString(nodes.map { ($0.preview ?? $0.url).path }.joined(separator: "\n"),
                                                            forType: .string)
                         }
                         Divider()
-                        Button("Sposta nel Cestino…", role: .destructive) {
+                        Button(L("Sposta nel Cestino…"), role: .destructive) {
                             trashWarning = warning(for: nodes, original: false)
                             pendingTrash = nodes.map(\.url)
                         }
                         if !originals.isEmpty {
-                            Button("Sposta il file video originale nel Cestino…", role: .destructive) {
+                            Button(L("Sposta il file video originale nel Cestino…"), role: .destructive) {
                                 trashWarning = warning(for: nodes, original: true)
                                 pendingTrash = originals
                             }
@@ -201,27 +201,27 @@ struct LibrariesView: View {
                 }
             }
         }
-        .navigationTitle("Librerie e progetti")
-        .searchable(text: $query, prompt: "Cerca evento, progetto o clip")
+        .navigationTitle(L("Librerie e progetti"))
+        .searchable(text: $query, prompt: L("Cerca evento, progetto o clip"))
         .fileImporter(isPresented: $checkingXML, allowedContentTypes: [.xml, .package, .folder, .data]) { r in
             guard case .success(let u) = r else { return }
             _ = u.startAccessingSecurityScopedResource()
             do {
                 let x = try Doctor.analyzeFCPXML(u)
                 let problems = x.missingFiles.count + x.duplicateIDs.count + x.danglingRefs.count + x.anomalies.count
-                model.notice = "FCPXML \(x.version): \(x.assets) file, \(x.clips) clip, frame rate \(x.frameRates.joined(separator: ", ")).\n"
-                    + (problems == 0 ? "Non ho trovato problemi." : "Problemi: \(x.missingFiles.count) file mancanti, \(x.duplicateIDs.count) ID doppi, \(x.danglingRefs.count) riferimenti rotti. "
-                       + x.anomalies.joined(separator: " "))
-            } catch { model.notice = "Non riesco a leggere questo FCPXML: \(error.localizedDescription)" }
+                model.notice = LF("FCPXML %@: %@ file, %@ clip, frame rate %@.", x.version, x.assets, x.clips, x.frameRates.joined(separator: ", ")) + "\n"
+                    + (problems == 0 ? L("Non ho trovato problemi.") : LF("Problemi: %@ file mancanti, %@ ID doppi, %@ riferimenti rotti. ", x.missingFiles.count, x.duplicateIDs.count, x.danglingRefs.count)
+                       + x.anomalies.map { L($0) }.joined(separator: " "))
+            } catch { model.notice = LF("Non riesco a leggere questo FCPXML: %@", error.localizedDescription) }
         }
         .toolbar {
             ToolbarItem {
-                Button { checkingXML = true } label: { Label("Controlla FCPXML", systemImage: "doc.text.magnifyingglass") }
-                    .help("Legge un FCPXML senza modificarlo e segnala file mancanti e riferimenti rotti")
+                Button { checkingXML = true } label: { Label(L("Controlla FCPXML"), systemImage: "doc.text.magnifyingglass") }
+                    .help(L("Legge un FCPXML senza modificarlo e segnala file mancanti e riferimenti rotti"))
             }
             ToolbarItem {
-                Button { exportCSV() } label: { Label("Esporta elenco", systemImage: "square.and.arrow.up") }
-                    .help("Esporta librerie, eventi e progetti in un file CSV")
+                Button { exportCSV() } label: { Label(L("Esporta elenco"), systemImage: "square.and.arrow.up") }
+                    .help(L("Esporta librerie, eventi e progetti in un file CSV"))
                     .disabled(model.tree.isEmpty)
             }
         }
@@ -239,7 +239,7 @@ struct LibrariesView: View {
                 Tile(value: formatBytes(model.tree.reduce(0) { $0 + $1.size }), label: "peso totale", tint: Theme.violet)
                 Tile(value: "\(missing)", label: "clip mancanti", tint: missing > 0 ? Theme.orange : nil)
             }
-            Text("Il peso comprende i media collegati fuori dalla libreria. Apri “Media” in un evento, seleziona una clip e premi la barra spaziatrice per l'anteprima. Tasto destro per le azioni: tutto va nel Cestino, quindi è recuperabile.")
+            Text(L("Il peso comprende i media collegati fuori dalla libreria. Apri “Media” in un evento, seleziona una clip e premi la barra spaziatrice per l'anteprima. Tasto destro per le azioni: tutto va nel Cestino, quindi è recuperabile."))
                 .foregroundStyle(.secondary)
         }
         .padding(16)
@@ -268,7 +268,7 @@ struct LibrariesView: View {
         do {
             try lines.joined(separator: "\n").write(to: url, atomically: true, encoding: .utf8)
         } catch {
-            model.notice = "Non sono riuscito a salvare il file: \(error.localizedDescription)"
+            model.notice = LF("Non sono riuscito a salvare il file: %@", error.localizedDescription)
         }
     }
 }

@@ -21,15 +21,15 @@ extension Doctor {
     public static func compare(_ a: CrashGroup, _ b: CrashGroup) -> [String] {
         guard let x = a.reports.first, let y = b.reports.first else { return [] }
         var out: [String] = []
-        if x.exception != y.exception { out.append("Eccezione: \(x.exception) contro \(y.exception).") }
-        if x.message != y.message { out.append("Messaggio: “\(x.message)” contro “\(y.message)”.") }
+        if x.exception != y.exception { out.append(TF("Eccezione: %@ contro %@.", x.exception, y.exception)) }
+        if x.message != y.message { out.append(TF("Messaggio: “%@” contro “%@”.", x.message, y.message)) }
         if x.topFrames.first != y.topFrames.first {
-            out.append("Punto del crash: \(x.topFrames.first ?? "?") contro \(y.topFrames.first ?? "?").")
+            out.append(TF("Punto del crash: %@ contro %@.", x.topFrames.first ?? "?", y.topFrames.first ?? "?"))
         }
-        if x.appVersion != y.appVersion { out.append("Versione di Final Cut: \(x.appVersion) contro \(y.appVersion).") }
-        if x.osVersion != y.osVersion { out.append("Sistema: \(x.osVersion) contro \(y.osVersion).") }
+        if x.appVersion != y.appVersion { out.append(TF("Versione di Final Cut: %@ contro %@.", x.appVersion, y.appVersion)) }
+        if x.osVersion != y.osVersion { out.append(TF("Sistema: %@ contro %@.", x.osVersion, y.osVersion)) }
         let qx = Set(a.reports.map(\.thread)), qy = Set(b.reports.map(\.thread))
-        if qx != qy { out.append("Thread coinvolti: \(qx.sorted().joined(separator: ", ")) contro \(qy.sorted().joined(separator: ", ")).") }
+        if qx != qy { out.append(TF("Thread coinvolti: %@ contro %@.", qx.sorted().joined(separator: ", "), qy.sorted().joined(separator: ", "))) }
         if out.isEmpty { out.append("Stessa causa: eccezione, punto del crash, versione e sistema coincidono.") }
         return out
     }
@@ -41,18 +41,18 @@ extension Doctor {
         var out: [String] = []
         let near = perf.filter { abs($0.date.timeIntervalSince(t)) <= window }
         if near.isEmpty {
-            out.append("Nessuna misura delle prestazioni entro \(Int(window / 60)) minuti dal crash: non posso dire se memoria o calore c'entrino.")
+            out.append(TF("Nessuna misura delle prestazioni entro %@ minuti dal crash: non posso dire se memoria o calore c'entrino.", Int(window / 60)))
         } else {
             if near.contains(where: { $0.pressure >= 2 }) { out.append("Memoria sotto pressione vicino al crash.") }
             if near.contains(where: { $0.memTotal > 0 && Double($0.swapUsed) / Double($0.memTotal) > 0.25 }) { out.append("Swap alto vicino al crash.") }
             if near.contains(where: { $0.thermal >= 2 }) { out.append("Il Mac era caldo vicino al crash.") }
-            if out.isEmpty { out.append("Misure vicine al crash (\(near.count)): memoria, swap e temperatura nella norma.") }
+            if out.isEmpty { out.append(TF("Misure vicine al crash (%@): memoria, swap e temperatura nella norma.", near.count)) }
         }
         let before = snapshots.filter { $0.date <= t }.sorted { $0.date < $1.date }
         var latest: [String: LibrarySnapshot] = [:]
         for s in before { latest[s.path] = s }
         if let big = latest.values.max(by: { $0.total < $1.total }) {
-            out.append("Libreria più grande allora: \((big.path as NSString).lastPathComponent), \(formatBytes(big.total)).")
+            out.append(TF("Libreria più grande allora: %@, %@.", (big.path as NSString).lastPathComponent, formatBytes(big.total)))
         }
         return out
     }

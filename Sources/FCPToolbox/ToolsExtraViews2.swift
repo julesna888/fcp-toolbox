@@ -49,7 +49,7 @@ struct ShotsPane: View {
     @State private var searched = false
 
     private var list: String {
-        shots.enumerated().map { "\(Doctor.timecode($1, fps: fps))\t\(String(format: "%.2f", $1)) s\t\($0 == 0 ? "inizio" : "stacco \($0)")" }.joined(separator: "\n")
+        shots.enumerated().map { "\(Doctor.timecode($1, fps: fps))\t\(String(format: "%.2f", $1)) s\t\($0 == 0 ? L("inizio") : LF("stacco %@", $0))" }.joined(separator: "\n")
     }
 
     var body: some View {
@@ -58,29 +58,29 @@ struct ShotsPane: View {
                     onURLs: { set($0.first) }, onPick: { set(chooseItems(folders: false, message: "Quale video?").first) }, preload: initialURLs)
             if let url {
                 HStack {
-                    Text(url.lastPathComponent).font(.headline).lineLimit(1)
+                    Text(L(url.lastPathComponent)).font(.headline).lineLimit(1)
                     Spacer()
-                    Text("Sensibilità").foregroundStyle(.secondary)
+                    Text(L("Sensibilità")).foregroundStyle(.secondary)
                     Slider(value: $sensitivity, in: 0.1...0.6).frame(width: 160)
-                    Button("Cerca i cambi") { run(url) }.buttonStyle(.borderedProminent).disabled(busy)
+                    Button(L("Cerca i cambi")) { run(url) }.buttonStyle(.borderedProminent).disabled(busy)
                 }
-                Text("Più a sinistra trova più stacchi (anche movimenti veloci); più a destra solo i tagli netti. Sui video lunghi può servire un po' di tempo.")
+                Text(L("Più a sinistra trova più stacchi (anche movimenti veloci); più a destra solo i tagli netti. Sui video lunghi può servire un po' di tempo."))
                     .font(.caption).foregroundStyle(.secondary)
             }
-            if busy { HStack { ProgressView().controlSize(.small); Text("Sto guardando il video…") } }
+            if busy { HStack { ProgressView().controlSize(.small); Text(L("Sto guardando il video…")) } }
             if searched && !busy {
                 HStack {
-                    Text("\(shots.count) inquadrature").font(.headline)
+                    Text(LF("%@ inquadrature", shots.count)).font(.headline)
                     Spacer()
-                    Button("Copia la lista") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(list, forType: .string) }
-                    Button("Salva .txt…") { saveFile("cambi-inquadratura.txt", types: [.plainText]) { try list.write(to: $0, atomically: true, encoding: .utf8) } }
+                    Button(L("Copia la lista")) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(list, forType: .string) }
+                    Button(L("Salva .txt…")) { saveFile("cambi-inquadratura.txt", types: [.plainText]) { try list.write(to: $0, atomically: true, encoding: .utf8) } }
                 }
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 150), spacing: 10)], spacing: 10) {
                     ForEach(Array(shots.enumerated()), id: \.offset) { i, t in
                         VStack(alignment: .leading, spacing: 3) {
                             if let url { Thumb(url: url, at: t + 0.1, width: 240) }
                             Text(Doctor.timecode(t, fps: fps)).font(.system(.caption, design: .monospaced))
-                            Text(i == 0 ? "inizio" : "stacco \(i)").font(.caption2).foregroundStyle(.secondary)
+                            Text(i == 0 ? L("inizio") : LF("stacco %@", i)).font(.caption2).foregroundStyle(.secondary)
                         }
                     }
                 }
@@ -119,14 +119,14 @@ struct ContactSheetPane: View {
             DropBox(title: "Trascina qui un video (griglia dei suoi fotogrammi) o una cartella (un fotogramma per clip)",
                     button: "Scegli cartella…",
                     onURLs: build, onPick: { build(chooseItems(folders: true, message: "Quale cartella?")) }, preload: initialURLs)
-            Button("Oppure scegli un solo video…") { build(chooseItems(folders: false, message: "Quale video?")) }
+            Button(L("Oppure scegli un solo video…")) { build(chooseItems(folders: false, message: "Quale video?")) }
             if busy { ProgressView().controlSize(.small) }
             if !tiles.isEmpty {
                 HStack {
-                    Text(title).font(.headline)
+                    Text(L(title)).font(.headline)
                     Spacer()
-                    Text("Clicca un riquadro e premi la barra spaziatrice per l'anteprima").font(.caption).foregroundStyle(.secondary)
-                    Button("Salva come immagine…") { export() }
+                    Text(L("Clicca un riquadro e premi la barra spaziatrice per l'anteprima")).font(.caption).foregroundStyle(.secondary)
+                    Button(L("Salva come immagine…")) { export() }
                 }
                 sheet(width: nil)
             }
@@ -140,7 +140,7 @@ struct ContactSheetPane: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Thumb(url: t.url, at: t.at, width: 320)
                         .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(selected == t.url ? Theme.green : .clear, lineWidth: 2))
-                    Text(t.label).font(.system(.caption2, design: .monospaced)).lineLimit(1)
+                    Text(L(t.label)).font(.system(.caption2, design: .monospaced)).lineLimit(1)
                 }
                 .onTapGesture { selected = t.url }
             }
@@ -165,7 +165,7 @@ struct ContactSheetPane: View {
                     })
                 }
                 let many = Array(files.prefix(150))
-                return ("\(many.count) clip", many.map { f in
+                return (LF("%@ clip", many.count), many.map { f in
                     let d = (try? Doctor.probeMedia(f))?.duration ?? 0
                     return Tile(url: f, at: d * 0.3, label: f.lastPathComponent)
                 })
@@ -203,28 +203,28 @@ struct TrimPane: View {
             if let player, let url {
                 PlayerBox(player: player).frame(height: 300).clipShape(RoundedRectangle(cornerRadius: 10))
                 HStack {
-                    Button("Inizio qui") { start = min(player.currentTime().seconds, max(0, end - 0.1)) }
+                    Button(L("Inizio qui")) { start = min(player.currentTime().seconds, max(0, end - 0.1)) }
                     TextField("", value: $start, format: .number.precision(.fractionLength(2))).frame(width: 70).textFieldStyle(.roundedBorder)
                     Text("→")
                     TextField("", value: $end, format: .number.precision(.fractionLength(2))).frame(width: 70).textFieldStyle(.roundedBorder)
-                    Button("Fine qui") { end = max(player.currentTime().seconds, start + 0.1) }
-                    Text("(\(timeText(max(0, end - start))) su \(timeText(duration)))").foregroundStyle(.secondary)
+                    Button(L("Fine qui")) { end = max(player.currentTime().seconds, start + 0.1) }
+                    Text(LF("(%@ su %@)", timeText(max(0, end - start)), timeText(duration))).foregroundStyle(.secondary)
                 }
                 Picker("", selection: $precise) {
-                    Text("Veloce: senza ricodificare, qualità identica, taglia sul punto chiave vicino").tag(false)
-                    Text("Preciso: al fotogramma, ricodifica (più lento)").tag(true)
+                    Text(L("Veloce: senza ricodificare, qualità identica, taglia sul punto chiave vicino")).tag(false)
+                    Text(L("Preciso: al fotogramma, ricodifica (più lento)")).tag(true)
                 }
                 .pickerStyle(.radioGroup).labelsHidden()
                 HStack {
-                    Button("Taglia") { cut(url) }.buttonStyle(.borderedProminent).disabled(busy || end <= start)
+                    Button(L("Taglia")) { cut(url) }.buttonStyle(.borderedProminent).disabled(busy || end <= start)
                     if busy { ProgressView().controlSize(.small) }
                     if let o = result?.output {
-                        Text("Fatto: \(o.lastPathComponent)").foregroundStyle(Theme.green).lineLimit(1)
-                        Button("Mostra nel Finder") { NSWorkspace.shared.activateFileViewerSelecting([o]) }
+                        Text(LF("Fatto: %@", o.lastPathComponent)).foregroundStyle(Theme.green).lineLimit(1)
+                        Button(L("Mostra nel Finder")) { NSWorkspace.shared.activateFileViewerSelecting([o]) }
                     }
-                    if let p = result?.problem { Text(p).foregroundStyle(Theme.orange) }
+                    if let p = result?.problem { Text(L(p)).foregroundStyle(Theme.orange) }
                 }
-                Text("Il file nuovo («… taglio») è accanto all'originale, che non viene toccato.").font(.caption).foregroundStyle(.secondary)
+                Text(L("Il file nuovo («… taglio») è accanto all'originale, che non viene toccato.")).font(.caption).foregroundStyle(.secondary)
             }
         }
     }
@@ -265,22 +265,22 @@ struct MetadataPane: View {
                     onURLs: set, onPick: { set(chooseItems(folders: false, message: "Quali file?")) }, preload: initialURLs)
             if !files.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Cosa togliere").font(.headline)
+                    Text(L("Cosa togliere")).font(.headline)
                     ForEach(MetadataKind.allCases) { k in
                         Toggle(k.rawValue, isOn: Binding(get: { kinds.contains(k) }, set: { on in
                             if on { kinds.insert(k) } else { kinds.remove(k) }
                         }))
                     }
-                    Text("Si crea una copia «… pulito» accanto all'originale. Le foto vengono salvate di nuovo alla massima qualità (JPEG e HEIC si ricomprimono pochissimo); i video non vengono ricodificati.")
+                    Text(L("Si crea una copia «… pulito» accanto all'originale. Le foto vengono salvate di nuovo alla massima qualità (JPEG e HEIC si ricomprimono pochissimo); i video non vengono ricodificati."))
                         .font(.caption).foregroundStyle(.secondary)
-                    Button("Crea \(files.count) copie pulite") { run() }.buttonStyle(.borderedProminent).disabled(busy || kinds.isEmpty)
+                    Button(LF("Crea %@ copie pulite", files.count)) { run() }.buttonStyle(.borderedProminent).disabled(busy || kinds.isEmpty)
                 }
                 .card()
                 ForEach(files.prefix(30), id: \.self) { f in
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(f.lastPathComponent).font(.headline).lineLimit(1)
+                        Text(L(f.lastPathComponent)).font(.headline).lineLimit(1)
                         let s = summary[f.path] ?? []
-                        Text(s.isEmpty ? "Nessun metadata trovato." : s.prefix(8).joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
+                        Text(s.isEmpty ? L("Nessun metadata trovato.") : s.prefix(8).map { L($0) }.joined(separator: " · ")).font(.caption).foregroundStyle(.secondary)
                     }
                 }
             }
@@ -327,12 +327,12 @@ struct PalettePane: View {
             DropBox(title: "Trascina qui una foto o un video: ne estraggo i colori", button: "Scegli file…",
                     onURLs: { load($0.first) }, onPick: { load(chooseItems(folders: false, message: "Quale file?").first) }, preload: initialURLs)
             HStack {
-                Button("Prendi un colore dallo schermo") { pickFromScreen() }
-                Text("Il contagocce di macOS: clicca un punto qualsiasi, anche fuori dall'app.").font(.caption).foregroundStyle(.secondary)
+                Button(L("Prendi un colore dallo schermo")) { pickFromScreen() }
+                Text(L("Il contagocce di macOS: clicca un punto qualsiasi, anche fuori dall'app.")).font(.caption).foregroundStyle(.secondary)
             }
             if let url, duration > 0, !Doctor.isPhoto(url) {
                 HStack {
-                    Text("Fotogramma a \(timeText(time))").foregroundStyle(.secondary)
+                    Text(LF("Fotogramma a %@", timeText(time))).foregroundStyle(.secondary)
                     Slider(value: $time, in: 0...duration) { editing in if !editing { reload() } }
                 }
                 Thumb(url: url, at: time, width: 480).frame(maxHeight: 220)
@@ -342,14 +342,14 @@ struct PalettePane: View {
                 ForEach(colors) { c in
                     HStack {
                         RoundedRectangle(cornerRadius: 6).fill(swatch(c)).frame(width: 40, height: 28)
-                        Text(c.hex).font(.system(.body, design: .monospaced))
+                        Text(L(c.hex)).font(.system(.body, design: .monospaced))
                         Text("rgb(\(c.r), \(c.g), \(c.b))").foregroundStyle(.secondary)
                         Spacer()
                         if c.share < 1 { Text("\(Int((c.share * 100).rounded()))%").foregroundStyle(.secondary) }
                         Button(copied == c.hex ? "Copiato" : "Copia") { copy(c.hex) }
                     }
                 }
-                Button("Copia tutta la palette") { copy(colors.map(\.hex).joined(separator: " ")) }
+                Button(L("Copia tutta la palette")) { copy(colors.map(\.hex).joined(separator: " ")) }
             }
         }
         .card()
@@ -412,9 +412,9 @@ struct SafePane: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Margini indicativi, controllati a \(Doctor.safeAreaCheckedOn). Le app cambiano spesso aspetto e questa app lavora offline, quindi non li aggiorna da sola: se non coincidono con quello che vedi nell'app, correggi i numeri qui sotto.")
+            Text(LF("Margini indicativi, controllati a %@. Le app cambiano spesso aspetto e questa app lavora offline, quindi non li aggiorna da sola: se non coincidono con quello che vedi nell'app, correggi i numeri qui sotto.", Doctor.safeAreaCheckedOn))
                 .font(.caption).foregroundStyle(Theme.orange)
-            Picker("", selection: $chosen) { ForEach(platforms) { Text($0.name).tag($0.name) } }
+            Picker("", selection: $chosen) { ForEach(platforms) { Text(L($0.name)).tag($0.name) } }
                 .pickerStyle(.segmented).labelsHidden().frame(maxWidth: 520)
             HStack(alignment: .top, spacing: 20) {
                 ZStack {
@@ -424,16 +424,16 @@ struct SafePane: View {
                 }
                 .frame(width: 270, height: 480).clipped()
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("Fuori dalla zona rossa il testo è al sicuro. I margini sono in pixel su 1080×1920.").foregroundStyle(.secondary)
-                    Stepper("Sopra: \(Int(platforms[index].top)) px", value: $platforms[index].top, in: 0...900, step: 10)
-                    Stepper("Sotto: \(Int(platforms[index].bottom)) px", value: $platforms[index].bottom, in: 0...900, step: 10)
-                    Stepper("Sinistra: \(Int(platforms[index].left)) px", value: $platforms[index].left, in: 0...400, step: 5)
-                    Stepper("Destra: \(Int(platforms[index].right)) px", value: $platforms[index].right, in: 0...400, step: 5)
+                    Text(L("Fuori dalla zona rossa il testo è al sicuro. I margini sono in pixel su 1080×1920.")).foregroundStyle(.secondary)
+                    Stepper(LF("Sopra: %@ px", Int(platforms[index].top)), value: $platforms[index].top, in: 0...900, step: 10)
+                    Stepper(LF("Sotto: %@ px", Int(platforms[index].bottom)), value: $platforms[index].bottom, in: 0...900, step: 10)
+                    Stepper(LF("Sinistra: %@ px", Int(platforms[index].left)), value: $platforms[index].left, in: 0...400, step: 5)
+                    Stepper(LF("Destra: %@ px", Int(platforms[index].right)), value: $platforms[index].right, in: 0...400, step: 5)
                     HStack {
-                        Button("Mostra su un mio video…") { url = chooseItems(folders: false, message: "Quale video?").first }
-                        Button("Salva guida PNG…") { exportGuide() }
+                        Button(L("Mostra su un mio video…")) { url = chooseItems(folders: false, message: "Quale video?").first }
+                        Button(L("Salva guida PNG…")) { exportGuide() }
                     }
-                    Text("La guida PNG è trasparente 1080×1920: mettila sopra la timeline in Final Cut e toglila prima di esportare.")
+                    Text(L("La guida PNG è trasparente 1080×1920: mettila sopra la timeline in Final Cut e toglila prima di esportare."))
                         .font(.caption).foregroundStyle(.secondary)
                 }
             }
@@ -464,35 +464,35 @@ struct DuplicatesPane: View {
         VStack(alignment: .leading, spacing: 12) {
             DropBox(title: "Trascina qui una cartella: cerco i file doppi anche con nomi diversi", button: "Scegli cartella…",
                     onURLs: { run($0.first) }, onPick: { run(chooseItems(folders: true, message: "Quale cartella?").first) }, preload: initialURLs)
-            if busy { HStack { ProgressView().controlSize(.small); Text("Sto confrontando i file…") } }
+            if busy { HStack { ProgressView().controlSize(.small); Text(L("Sto confrontando i file…")) } }
             if done && !busy {
-                if identical.isEmpty && similar.isEmpty { Text("Nessun doppione trovato.").foregroundStyle(Theme.green) }
+                if identical.isEmpty && similar.isEmpty { Text(L("Nessun doppione trovato.")).foregroundStyle(Theme.green) }
                 if !identical.isEmpty {
-                    Text("Copie identiche (stesso contenuto byte per byte)").font(.headline)
-                    Text("Si possono liberare \(formatBytes(identical.reduce(0) { $0 + $1.wasted })) tenendone una per gruppo.").foregroundStyle(.secondary)
+                    Text(L("Copie identiche (stesso contenuto byte per byte)")).font(.headline)
+                    Text(LF("Si possono liberare %@ tenendone una per gruppo.", formatBytes(identical.reduce(0) { $0 + $1.wasted }))).foregroundStyle(.secondary)
                     ForEach(identical) { group($0.files) }
                 }
                 if !similar.isEmpty {
-                    Text("Stesso video, file diverso (stima)").font(.headline)
-                    Text("Stessa durata e stesse immagini, ma ricodificati o ridimensionati. È una stima: guardali prima di cestinare (clicca e premi spazio).").foregroundStyle(.secondary)
+                    Text(L("Stesso video, file diverso (stima)")).font(.headline)
+                    Text(L("Stessa durata e stesse immagini, ma ricodificati o ridimensionati. È una stima: guardali prima di cestinare (clicca e premi spazio).")).foregroundStyle(.secondary)
                     ForEach(similar, id: \.self) { group($0) }
                 }
             }
         }
         .spacePreview(selected.map { [$0] } ?? [])
-        .trashConfirmation($pending, warning: "Va nel Cestino: puoi recuperarlo da lì.")
+        .trashConfirmation($pending, warning: L("Va nel Cestino: puoi recuperarlo da lì."))
     }
 
     private func group(_ files: [URL]) -> some View {
         VStack(alignment: .leading, spacing: 4) {
             ForEach(files, id: \.self) { f in
                 HStack {
-                    Text(f.lastPathComponent).lineLimit(1)
+                    Text(L(f.lastPathComponent)).lineLimit(1)
                     Text(f.deletingLastPathComponent().lastPathComponent).foregroundStyle(.secondary).lineLimit(1)
                     Spacer()
                     Text(formatBytes(Int64((try? f.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0))).foregroundStyle(.secondary)
-                    Button("Mostra") { NSWorkspace.shared.activateFileViewerSelecting([f]) }
-                    Button("Cestino") { pending = [f] }
+                    Button(L("Mostra")) { NSWorkspace.shared.activateFileViewerSelecting([f]) }
+                    Button(L("Cestino")) { pending = [f] }
                 }
                 .padding(.vertical, 2)
                 .background(selected == f ? Theme.panelHigh : Color.clear)
@@ -548,18 +548,18 @@ struct FootageSearchPane: View {
 
     private var setup: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Cerca nei tuoi filmati scrivendo cosa c'è dentro").font(.headline)
-            Text("Scrivi «persona che cammina sulla spiaggia» e l'app trova le clip del tuo archivio che lo mostrano. Usa un'intelligenza artificiale gratuita che gira solo su questo Mac: nessun account, nessun costo, i tuoi video non escono dal computer.")
+            Text(L("Cerca nei tuoi filmati scrivendo cosa c'è dentro")).font(.headline)
+            Text(L("Scrivi «persona che cammina sulla spiaggia» e l'app trova le clip del tuo archivio che lo mostrano. Usa un'intelligenza artificiale gratuita che gira solo su questo Mac: nessun account, nessun costo, i tuoi video non escono dal computer."))
                 .foregroundStyle(.secondary)
-            Text("Serve un download una tantum di circa 800 MB (librerie e modelli, da Hugging Face) nella cartella dei dati dell'app. Se si interrompe, riparte da dove era arrivato.")
+            Text(L("Serve un download una tantum di circa 800 MB (librerie e modelli, da Hugging Face) nella cartella dei dati dell'app. Se si interrompe, riparte da dove era arrivato."))
                 .font(.caption).foregroundStyle(.secondary)
             if installing {
                 ProgressView(value: installFraction)
-                HStack { Text(installStep).foregroundStyle(.secondary); Spacer(); Button("Ferma") { control.cancel() } }
+                HStack { Text(L(installStep)).foregroundStyle(.secondary); Spacer(); Button(L("Ferma")) { control.cancel() } }
             } else {
-                Button("Scarica e installa (circa 800 MB)") { install() }.buttonStyle(.borderedProminent)
+                Button(L("Scarica e installa (circa 800 MB)")) { install() }.buttonStyle(.borderedProminent)
             }
-            if let problem { Text(problem).foregroundStyle(Theme.orange) }
+            if let problem { Text(L(problem)).foregroundStyle(Theme.orange) }
         }
         .card()
     }
@@ -567,7 +567,7 @@ struct FootageSearchPane: View {
     private var archive: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
-                Button(folder.map { "Archivio: \($0.lastPathComponent)" } ?? "Scegli la cartella dell'archivio…") {
+                Button(folder.map { LF("Archivio: %@", $0.lastPathComponent) } ?? L("Scegli la cartella dell'archivio…")) {
                     if let u = chooseItems(folders: true, message: "Quale cartella contiene i tuoi filmati?").first {
                         folder = u
                         UserDefaults.standard.set(u.path, forKey: "clipArchive")
@@ -577,40 +577,40 @@ struct FootageSearchPane: View {
                     if indexing {
                         ProgressView(value: total > 0 ? Double(done) / Double(total) : 0).frame(width: 140)
                         Text("\(done)/\(total)").monospacedDigit().foregroundStyle(.secondary)
-                        Button("Ferma") { control.cancel() }
+                        Button(L("Ferma")) { control.cancel() }
                     } else {
-                        Button("Analizza l'archivio") { index(folder) }.buttonStyle(.borderedProminent)
+                        Button(L("Analizza l'archivio")) { index(folder) }.buttonStyle(.borderedProminent)
                     }
                 }
             }
-            Text("L'analisi guarda alcuni fotogrammi di ogni clip (circa 1–2 secondi a clip) e si fa una volta sola: le clip già analizzate e non cambiate vengono saltate. Rifalla quando aggiungi nuovi filmati.")
+            Text(L("L'analisi guarda alcuni fotogrammi di ogni clip (circa 1–2 secondi a clip) e si fa una volta sola: le clip già analizzate e non cambiate vengono saltate. Rifalla quando aggiungi nuovi filmati."))
                 .font(.caption).foregroundStyle(.secondary)
-            if let indexNote { Text(indexNote).foregroundStyle(Theme.green) }
-            if let problem { Text(problem).foregroundStyle(Theme.orange) }
+            if let indexNote { Text(L(indexNote)).foregroundStyle(Theme.green) }
+            if let problem { Text(L(problem)).foregroundStyle(Theme.orange) }
         }
         .card()
     }
 
     private var searchBox: some View {
         HStack {
-            TextField("Cerca o descrivi la scena: «persona che cammina sulla spiaggia»", text: $query)
+            TextField(L("Cerca o descrivi la scena: «persona che cammina sulla spiaggia»"), text: $query)
                 .textFieldStyle(.roundedBorder).onSubmit(search)
-            Button("Cerca") { search() }.buttonStyle(.borderedProminent).disabled(searching || query.trimmingCharacters(in: .whitespaces).isEmpty)
+            Button(L("Cerca")) { search() }.buttonStyle(.borderedProminent).disabled(searching || query.trimmingCharacters(in: .whitespaces).isEmpty)
             if searching { ProgressView().controlSize(.small) }
         }
     }
 
     @ViewBuilder private var results: some View {
-        if searched && hits.isEmpty && problem == nil && !searching { Text("Nessuna clip trovata.").foregroundStyle(.secondary) }
+        if searched && hits.isEmpty && problem == nil && !searching { Text(L("Nessuna clip trovata.")).foregroundStyle(.secondary) }
         if !hits.isEmpty {
-            Text("Clicca una clip e premi la barra spaziatrice per l'anteprima. Le prime sono le più adatte; il nome del file conta un po'.")
+            Text(L("Clicca una clip e premi la barra spaziatrice per l'anteprima. Le prime sono le più adatte; il nome del file conta un po'."))
                 .font(.caption).foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 200), spacing: 10)], spacing: 10) {
                 ForEach(hits) { h in
                     VStack(alignment: .leading, spacing: 3) {
                         Thumb(url: h.url, at: h.time, width: 320)
                             .overlay(RoundedRectangle(cornerRadius: 3).strokeBorder(selected == h.url ? Theme.green : .clear, lineWidth: 2))
-                        Text(h.url.lastPathComponent).font(.caption).lineLimit(1)
+                        Text(L(h.url.lastPathComponent)).font(.caption).lineLimit(1)
                         HStack {
                             ProgressView(value: min(1, max(0, (h.score - 0.18) / 0.17))).tint(h.score >= 0.27 ? Theme.green : Theme.orange)
                             Text(String(format: "%.2f", h.score)).font(.caption2.monospacedDigit()).foregroundStyle(.secondary)
@@ -618,7 +618,7 @@ struct FootageSearchPane: View {
                         HStack {
                             Text(timeText(h.time)).font(.caption2).foregroundStyle(.secondary)
                             Spacer()
-                            Button("Mostra") { NSWorkspace.shared.activateFileViewerSelecting([h.url]) }.controlSize(.small)
+                            Button(L("Mostra")) { NSWorkspace.shared.activateFileViewerSelecting([h.url]) }.controlSize(.small)
                         }
                     }
                     .onTapGesture { selected = h.url }
@@ -646,7 +646,7 @@ struct FootageSearchPane: View {
                 Doctor.clipIndex(folder: f, control: c) { d, t in Task { @MainActor in done = d; total = t } }
             }.value
             indexing = false; problem = r.problem
-            if r.problem == nil || r.clips > 0 { indexNote = "Archivio pronto: \(r.clips) clip analizzate." }
+            if r.problem == nil || r.clips > 0 { indexNote = LF("Archivio pronto: %@ clip analizzate.", r.clips) }
         }
     }
 

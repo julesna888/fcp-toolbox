@@ -62,7 +62,7 @@ extension Doctor {
         var out: [PreflightCheck] = []
         let low = volumes.filter { $0.free < Int64(lowSpaceGB) * 1_000_000_000 }
         out.append(low.isEmpty
-            ? PreflightCheck(title: "Spazio sui dischi", detail: "Tutti i dischi hanno più di \(lowSpaceGB) GB liberi.", level: .ok)
+            ? PreflightCheck(title: "Spazio sui dischi", detail: TF("Tutti i dischi hanno più di %@ GB liberi.", lowSpaceGB), level: .ok)
             : PreflightCheck(title: "Spazio sui dischi",
                              detail: low.map { "\($0.name): \(formatBytes($0.free)) liberi" }.joined(separator: " · "), level: .warn))
         let heavy = closable(procs)

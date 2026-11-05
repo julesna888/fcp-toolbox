@@ -177,7 +177,7 @@ extension Doctor {
                   v.isRegularFile == true, v.isSymbolicLink != true,
                   !linked.contains(realKey(f.url))
             else {
-                result.failures.append("\(f.name): saltato per sicurezza")
+                result.failures.append(TF("%@: saltato per sicurezza", f.name))
                 continue
             }
             do {

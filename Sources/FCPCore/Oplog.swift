@@ -28,12 +28,12 @@ public struct OperationRecord: Codable, Identifiable, Sendable {
     public var verification: String {
         guard let d = verifiedDelta else { return "Lo spazio sul disco non è stato misurato." }
         if kind != "clean" {
-            return "Spostato nel Cestino: lo spazio si libera quando lo svuoti (ora il disco mostra \(signed(d)))."
+            return TF("Spostato nel Cestino: lo spazio si libera quando lo svuoti (ora il disco mostra %@).", signed(d))
         }
         if estimatedBytes > 0, d < estimatedBytes / 2 {
-            return "Il disco mostra \(signed(d)) invece dei \(formatBytes(estimatedBytes)) stimati: altre scritture in corso o snapshot locali (Time Machine) possono trattenere lo spazio."
+            return TF("Il disco mostra %@ invece dei %@ stimati: altre scritture in corso o snapshot locali (Time Machine) possono trattenere lo spazio.", signed(d), formatBytes(estimatedBytes))
         }
-        return "Misurato sul disco: \(signed(d)) liberi in più."
+        return TF("Misurato sul disco: %@ liberi in più.", signed(d))
     }
 
     private func signed(_ n: Int64) -> String { (n < 0 ? "-" : "+") + formatBytes(abs(n)) }

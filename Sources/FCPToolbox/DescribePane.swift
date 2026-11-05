@@ -30,30 +30,30 @@ struct DescribePane: View {
         VStack(alignment: .leading, spacing: 12) {
             if !installed {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text("Il componente di ricerca con intelligenza artificiale non è installato.").font(.headline).foregroundStyle(Theme.orange)
-                    Text("Per descrivere le clip serve lo stesso componente di «Cerca nei filmati»: installalo da lì (si scarica una volta sola, poi tutto funziona su questo Mac, senza internet).")
-                    Button("Apri «Cerca nei filmati»") { model.open("search") }
-                    Button("Ricontrolla") { installed = Doctor.clipInstalled }
+                    Text(L("Il componente di ricerca con intelligenza artificiale non è installato.")).font(.headline).foregroundStyle(Theme.orange)
+                    Text(L("Per descrivere le clip serve lo stesso componente di «Cerca nei filmati»: installalo da lì (si scarica una volta sola, poi tutto funziona su questo Mac, senza internet)."))
+                    Button(L("Apri «Cerca nei filmati»")) { model.open("search") }
+                    Button(L("Ricontrolla")) { installed = Doctor.clipInstalled }
                 }
             } else {
-                DropBox(title: "Trascina qui clip o una cartella: scrivo che cosa si vede in ognuna", button: "Scegli clip o cartella…",
-                        onURLs: add, onPick: { add(chooseItems(folders: false, message: "Quali clip descrivo?")) })
-                Text("Le descrizioni sono generate dall'IA locale in base ad alcuni fotogrammi: sono un aiuto per orientarsi, non una trascrizione. Le tue clip non vengono toccate.")
+                DropBox(title: L("Trascina qui clip o una cartella: scrivo che cosa si vede in ognuna"), button: L("Scegli clip o cartella…"),
+                        onURLs: add, onPick: { add(chooseItems(folders: false, message: L("Quali clip descrivo?"))) })
+                Text(L("Le descrizioni sono generate dall'IA locale in base ad alcuni fotogrammi: sono un aiuto per orientarsi, non una trascrizione. Le tue clip non vengono toccate."))
                     .font(.caption).foregroundStyle(.secondary)
             }
-            if busy { HStack { ProgressView().controlSize(.small); Text("Guardo le clip… la prima volta può servire qualche secondo a clip.") } }
-            if let problem { Text(problem).foregroundStyle(Theme.orange) }
+            if busy { HStack { ProgressView().controlSize(.small); Text(L("Guardo le clip… la prima volta può servire qualche secondo a clip.")) } }
+            if let problem { Text(L(problem)).foregroundStyle(Theme.orange) }
             if !rows.isEmpty {
                 HStack {
-                    Button("Copia tutto") { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(plain, forType: .string) }
-                    Button("Salva .csv…") { save("descrizioni-clip.csv") { try csv.write(to: $0, atomically: true, encoding: .utf8) } }
-                    Button("Svuota") { rows = []; problem = nil }
+                    Button(L("Copia tutto")) { NSPasteboard.general.clearContents(); NSPasteboard.general.setString(plain, forType: .string) }
+                    Button(L("Salva .csv…")) { save("descrizioni-clip.csv") { try csv.write(to: $0, atomically: true, encoding: .utf8) } }
+                    Button(L("Svuota")) { rows = []; problem = nil }
                 }.disabled(busy)
                 ForEach(rows) { r in
                     HStack(alignment: .top, spacing: 12) {
                         Thumb(url: r.url, width: 240).frame(width: 150)
                         VStack(alignment: .leading, spacing: 4) {
-                            Text(r.url.lastPathComponent).font(.headline).lineLimit(1)
+                            Text(L(r.url.lastPathComponent)).font(.headline).lineLimit(1)
                             if let t = r.text { Text(t.isEmpty ? Self.empty : t).textSelection(.enabled) }
                             else { ProgressView().controlSize(.small) }
                         }
@@ -84,7 +84,7 @@ struct DescribePane: View {
             let r = Doctor.clipDescribe(found)
             await MainActor.run {
                 for i in rows.indices where rows[i].text == nil && found.contains(rows[i].url) {
-                    rows[i].text = r.descriptions[rows[i].url] ?? (r.problem == nil ? "Clip non leggibile." : "—")
+                    rows[i].text = r.descriptions[rows[i].url] ?? (r.problem == nil ? L("Clip non leggibile.") : "—")
                 }
                 problem = r.problem
                 busy = false

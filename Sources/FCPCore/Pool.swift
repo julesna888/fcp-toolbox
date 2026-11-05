@@ -133,7 +133,7 @@ extension Doctor {
         var result = PoolResult()
         func place(_ files: [URL], into dir: URL, isMedia: Bool) {
             guard (try? fm.createDirectory(at: dir, withIntermediateDirectories: true)) != nil else {
-                result.failures.append("\(dir.lastPathComponent): non riesco a creare la cartella")
+                result.failures.append(TF("%@: non riesco a creare la cartella", dir.lastPathComponent))
                 return
             }
             for (i, src) in files.enumerated() {

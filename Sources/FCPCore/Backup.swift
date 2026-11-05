@@ -33,7 +33,7 @@ public enum BackupError: LocalizedError {
         case .overlap:
             return "La destinazione e la libreria sono una dentro l'altra. Scegli un altro disco o un'altra cartella."
         case .notEnoughSpace(let n, let f):
-            return "Spazio insufficiente sulla destinazione: servono circa \(formatBytes(n)) (più un margine), ne restano \(formatBytes(f))."
+            return TF("Spazio insufficiente sulla destinazione: servono circa %@ (più un margine), ne restano %@.", formatBytes(n), formatBytes(f))
         }
     }
 }
@@ -124,7 +124,7 @@ extension Doctor {
                let dm = try? to.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate,
                dm > sm.addingTimeInterval(2) {
                 copyFailures += 1
-                failures.append("\((rel as NSString).lastPathComponent): nel backup è più recente dell'originale, non sovrascritto")
+                failures.append(TF("%@: nel backup è più recente dell'originale, non sovrascritto", (rel as NSString).lastPathComponent))
                 continue
             }
             do {
@@ -153,7 +153,7 @@ extension Doctor {
                 let a = try? fileChecksum(src.appendingPathComponent(rel))
                 let b = try? fileChecksum(dst.appendingPathComponent(rel))
                 if let a, a == b { verified += 1 } else {
-                    failures.append("\((rel as NSString).lastPathComponent): la copia non coincide con l'originale")
+                    failures.append(TF("%@: la copia non coincide con l'originale", (rel as NSString).lastPathComponent))
                 }
             }
         }

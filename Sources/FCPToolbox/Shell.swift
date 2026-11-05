@@ -119,7 +119,7 @@ struct UniversalDropZone: View {
     private func pick() {
         let p = NSOpenPanel()
         p.canChooseFiles = true; p.canChooseDirectories = true; p.allowsMultipleSelection = true
-        p.message = "Quali file o cartelle?"
+        p.message = L("Quali file o cartelle?")
         if p.runModal() == .OK { urls = p.urls }
     }
 }
@@ -139,7 +139,7 @@ struct SearchPalette: View {
         VStack(spacing: 0) {
             HStack {
                 Image(systemName: "magnifyingglass").foregroundStyle(.secondary)
-                TextField("Cerca uno strumento: «compress video», «sottotitoli», «rinomina»…", text: $query)
+                TextField(L("Cerca uno strumento: «compress video», «sottotitoli», «rinomina»…"), text: $query)
                     .textFieldStyle(.plain).font(.title3)
                     .focused($focused)
                     .onSubmit { open(selected) }
@@ -150,7 +150,7 @@ struct SearchPalette: View {
             .padding(14)
             Divider()
             if results.isEmpty {
-                Text("Nessuno strumento per «\(query)».").foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 120)
+                Text(LF("Nessuno strumento per «%@».", query)).foregroundStyle(.secondary).frame(maxWidth: .infinity, minHeight: 120)
             } else {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -160,8 +160,8 @@ struct SearchPalette: View {
                                     HStack(spacing: 10) {
                                         Image(systemName: Shell.icon(for: e)).frame(width: 24).foregroundStyle(Theme.green)
                                         VStack(alignment: .leading, spacing: 1) {
-                                            Text(e.title).font(.headline)
-                                            Text(e.summary).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                                            Text(L(e.title)).font(.headline)
+                                            Text(L(e.summary)).font(.caption).foregroundStyle(.secondary).lineLimit(1)
                                         }
                                         Spacer()
                                     }
@@ -179,7 +179,7 @@ struct SearchPalette: View {
                 }
             }
             Divider()
-            Text("↑↓ per scegliere · Invio per aprire · Esc per chiudere").font(.caption).foregroundStyle(.secondary).padding(8)
+            Text(L("↑↓ per scegliere · Invio per aprire · Esc per chiudere")).font(.caption).foregroundStyle(.secondary).padding(8)
         }
         .frame(width: 560, height: 420)
         .background(Theme.bg)
@@ -203,21 +203,21 @@ struct QuickActionsCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Azioni rapide nel Finder").font(.headline)
-            Text("Dal Finder: seleziona uno o più file, tasto destro, «Azioni rapide», poi «FCP Toolbox - …». L'app si apre sullo strumento scelto con i file già caricati.")
+            Text(L("Azioni rapide nel Finder")).font(.headline)
+            Text(L("Dal Finder: seleziona uno o più file, tasto destro, «Azioni rapide», poi «FCP Toolbox - …». L'app si apre sullo strumento scelto con i file già caricati."))
                 .font(.callout).foregroundStyle(.secondary)
-            Text("Se dopo l'installazione le voci non compaiono, riapri il Finder (o esci e rientra dall'account) e guarda in Impostazioni di Sistema, sezione Estensioni.")
+            Text(L("Se dopo l'installazione le voci non compaiono, riapri il Finder (o esci e rientra dall'account) e guarda in Impostazioni di Sistema, sezione Estensioni."))
                 .font(.caption).foregroundStyle(.secondary)
             HStack {
-                Button("Installa le azioni rapide nel Finder…") { confirming = true }
-                if !installed.isEmpty { Button("Rimuovi") { remove() } }
-                Text(installed.isEmpty ? "Non installate" : "\(installed.count) installate").foregroundStyle(.secondary)
+                Button(L("Installa le azioni rapide nel Finder…")) { confirming = true }
+                if !installed.isEmpty { Button(L("Rimuovi")) { remove() } }
+                Text(installed.isEmpty ? L("Non installate") : LF("%@ installate", installed.count)).foregroundStyle(.secondary)
             }
-            if let message { Text(message).font(.caption).foregroundStyle(.secondary) }
+            if let message { Text(L(message)).font(.caption).foregroundStyle(.secondary) }
         }
         .card()
-        .confirmationDialog("Creare \(QuickActions.actions.count) azioni rapide?", isPresented: $confirming, titleVisibility: .visible) {
-            Button("Crea in ~/Library/Services") { install() }
+        .confirmationDialog(LF("Creare %@ azioni rapide?", QuickActions.actions.count), isPresented: $confirming, titleVisibility: .visible) {
+            Button(L("Crea in ~/Library/Services")) { install() }
         } message: {
             Text("Crea queste cartelle .workflow in ~/Library/Services:\n" + QuickActions.actions.map { "• " + $0.fileName }.joined(separator: "\n")
                  + "\nPuoi toglierle quando vuoi con «Rimuovi»; non tocco altro.")
@@ -228,15 +228,15 @@ struct QuickActionsCard: View {
         do {
             let made = try QuickActions.install()
             installed = QuickActions.installed()
-            message = "Create \(made.count) azioni in ~/Library/Services."
-        } catch { message = "Non sono riuscito a crearle: \(error.localizedDescription)" }
+            message = LF("Create %@ azioni in ~/Library/Services.", made.count)
+        } catch { message = LF("Non sono riuscito a crearle: %@", error.localizedDescription) }
     }
 
     private func remove() {
         do {
             let gone = try QuickActions.remove()
             installed = QuickActions.installed()
-            message = "Rimosse \(gone.count) azioni."
-        } catch { message = "Non sono riuscito a rimuoverle: \(error.localizedDescription)" }
+            message = LF("Rimosse %@ azioni.", gone.count)
+        } catch { message = LF("Non sono riuscito a rimuoverle: %@", error.localizedDescription) }
     }
 }

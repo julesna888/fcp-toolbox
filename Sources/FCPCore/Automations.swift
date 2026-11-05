@@ -108,7 +108,7 @@ extension Doctor {
                 guard let free = env.freeSpace(lib) else { continue }
                 let volume = probe([lib]).volume?.path ?? lib.deletingLastPathComponent().path
                 guard seen.insert(volume).inserted, free < Int64(config.lowSpaceGB) * 1_000_000_000 else { continue }
-                emit("space:\(volume)", "Poco spazio libero", "Restano \(formatBytes(free)) sul disco di \"\(lib.lastPathComponent)\". Soglia: \(config.lowSpaceGB) GB.")
+                emit("space:\(volume)", "Poco spazio libero", TF("Restano %@ sul disco di \"%@\". Soglia: %@ GB.", formatBytes(free), lib.lastPathComponent, config.lowSpaceGB))
             }
         }
 
@@ -119,7 +119,7 @@ extension Doctor {
                 let last = history.filter { $0.source == path }.map(\.date).max()
                 let days = last.map { now.timeIntervalSince($0) / 86_400 }
                 if days == nil || days! >= Double(config.backupDays) {
-                    emit("backup:\(path)", "Backup da fare", days == nil ? "\"\(lib.lastPathComponent)\" non ha mai avuto un backup." : "L'ultimo backup di \"\(lib.lastPathComponent)\" è di \(Int(days!)) giorni fa.")
+                    emit("backup:\(path)", "Backup da fare", days == nil ? TF("\"%@\" non ha mai avuto un backup.", lib.lastPathComponent) : TF("L'ultimo backup di \"%@\" è di %@ giorni fa.", lib.lastPathComponent, Int(days!)))
                 }
             }
         }
@@ -130,13 +130,13 @@ extension Doctor {
                 state.crashesInitialised = true  // the first run only learns what already exists
             } else {
                 let fresh = files.filter { !state.seenCrashes.contains($0) }
-                if !fresh.isEmpty { emit("crash:\(fresh.sorted().last!)", "Final Cut si è chiuso", "\(fresh.count) nuovo rapporto di crash. Aprilo da \"Crash di Final Cut\".") }
+                if !fresh.isEmpty { emit("crash:\(fresh.sorted().last!)", "Final Cut si è chiuso", TF("%@ nuovo rapporto di crash. Aprilo da \"Crash di Final Cut\".", fresh.count)) }
             }
             state.seenCrashes = files
         }
 
         if config.weeklyReport, state.lastReport.map({ now.timeIntervalSince($0) >= 7 * 86_400 }) ?? true {
-            var lines = ["FCP Toolbox — report del \(ISO8601DateFormatter().string(from: now))", ""]
+            var lines = [TF("FCP Toolbox — report del %@", ISO8601DateFormatter().string(from: now)), ""]
             for lib in libs {
                 let r = health(of: scan(lib), history: env.backups(), now: now)
                 lines.append("\(lib.lastPathComponent): \(r.score)/100 — \(r.label)")
@@ -152,7 +152,7 @@ extension Doctor {
         if let folder = config.deliveryFolder, !folder.isEmpty {
             let since = state.deliveryChecked ?? now
             for r in env.deliveryProblems(URL(fileURLWithPath: folder), config.deliveryProfile, since) where !r.problems.isEmpty {
-                emit("delivery:\(r.file)", "Export da controllare", "\(r.file) non rispetta \"\(config.deliveryProfile)\": \(r.problems.joined(separator: " "))")
+                emit("delivery:\(r.file)", "Export da controllare", TF("%@ non rispetta \"%@\": %@", r.file, config.deliveryProfile, r.problems.joined(separator: " ")))
             }
             state.deliveryChecked = now
         }

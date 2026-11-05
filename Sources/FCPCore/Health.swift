@@ -48,7 +48,7 @@ extension Doctor {
             let ratio = Double(i.mediaMissing) / Double(i.mediaTotal)
             let s = i.mediaMissing == 0 ? 100 : Int(max(0, 60 * (1 - ratio)).rounded())
             out.append(HealthIndicator(name: "Media collegati", score: s, weight: 30,
-                detail: i.mediaMissing == 0 ? "Tutti i \(i.mediaTotal) file sono al loro posto." : "\(i.mediaMissing) file su \(i.mediaTotal) non si trovano.",
+                detail: i.mediaMissing == 0 ? TF("Tutti i %@ file sono al loro posto.", i.mediaTotal) : TF("%@ file su %@ non si trovano.", i.mediaMissing, i.mediaTotal),
                 advice: i.mediaMissing == 0 ? nil : "Ricollega i file mancanti prima di consegnare o spostare la libreria."))
         } else {
             out.append(HealthIndicator(name: "Media collegati", score: nil, weight: 30, detail: "Nessun file collegato da controllare.", advice: nil))
@@ -59,9 +59,9 @@ extension Doctor {
             let days = max(0, i.now.timeIntervalSince(last) / 86_400)
             var s = 20 + Int((Double(ramp(days, bad: 60, good: 7)) * 0.8).rounded())
             if let c = i.changedSinceBackup, c > 0 { s = max(0, s - 20) }
-            let changes = (i.changedSinceBackup ?? 0) > 0 ? " Da allora sono cambiati \(i.changedSinceBackup!) file." : ""
+            let changes = (i.changedSinceBackup ?? 0) > 0 ? TF(" Da allora sono cambiati %@ file.", i.changedSinceBackup!) : ""
             out.append(HealthIndicator(name: "Backup", score: s, weight: 25,
-                detail: "Ultimo backup \(Int(days)) giorni fa.\(changes)", advice: s < 80 ? "Fai un backup aggiornato." : nil))
+                detail: TF("Ultimo backup %@ giorni fa.%@", Int(days), changes), advice: s < 80 ? "Fai un backup aggiornato." : nil))
         } else {
             out.append(HealthIndicator(name: "Backup", score: 0, weight: 25, detail: "Nessun backup registrato da FCP Toolbox.",
                                        advice: "Fai un backup su un altro disco. Un solo disco può rompersi."))
@@ -71,7 +71,7 @@ extension Doctor {
         if let f = i.freeBytes {
             let gb = Double(f) / 1e9
             let s = ramp(gb, bad: 5, good: 50)
-            out.append(HealthIndicator(name: "Spazio libero", score: s, weight: 20, detail: "\(formatBytes(f)) liberi sul disco della libreria.",
+            out.append(HealthIndicator(name: "Spazio libero", score: s, weight: 20, detail: TF("%@ liberi sul disco della libreria.", formatBytes(f)),
                                        advice: s < 60 ? "Libera spazio: con poco spazio render ed esportazioni possono fallire." : nil))
         } else {
             out.append(HealthIndicator(name: "Spazio libero", score: nil, weight: 20, detail: "Non riesco a leggere lo spazio libero.", advice: nil))
@@ -88,7 +88,7 @@ extension Doctor {
             let share = Double(i.cacheBytes) / Double(i.libraryBytes)
             let s = ramp(share, bad: 0.5, good: 0.1)
             out.append(HealthIndicator(name: "File rigenerabili", score: s, weight: 10,
-                detail: i.cacheBytes == 0 ? "Niente da rigenerare: nessun render o media ottimizzato." : "\(formatBytes(i.cacheBytes)) (\(Int((share * 100).rounded()))%) si possono rigenerare.",
+                detail: i.cacheBytes == 0 ? "Niente da rigenerare: nessun render o media ottimizzato." : TF("%@ (%@%) si possono rigenerare.", formatBytes(i.cacheBytes), Int((share * 100).rounded())),
                 advice: s < 60 ? "Puoi liberarli da Pulizia: Final Cut li ricrea quando servono." : nil))
         }
 
@@ -104,7 +104,7 @@ extension Doctor {
         guard let g = growth, g.days >= 1, g.delta > 0 else { return nil }
         let perDay = Double(g.delta) / g.days
         let left = Double(free) / perDay
-        return "Al ritmo misurato (\(formatBytes(Int64(perDay))) al giorno in \(Int(g.days)) giorni) lo spazio libero finirebbe tra circa \(Int(left)) giorni. È una stima in linea retta: non conosce i prossimi progetti."
+        return TF("Al ritmo misurato (%@ al giorno in %@ giorni) lo spazio libero finirebbe tra circa %@ giorni. È una stima in linea retta: non conosce i prossimi progetti.", formatBytes(Int64(perDay)), Int(g.days), Int(left))
     }
 
     /// Reads the real state of a library from disk and scores it.
