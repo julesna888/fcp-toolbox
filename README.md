@@ -4,7 +4,9 @@
 
 [🇬🇧 English](README.en.md) · 🇮🇹 Italiano
 
-App gratuita e open source per macOS che ti dice **dove è finito lo spazio dei tuoi media Final Cut Pro** e cosa puoi togliere senza rischi. Gira tutta in locale: nessun account, nessun dato inviato (internet si usa solo se lo chiedi tu: «Scarica da link» e «Controlla aggiornamenti»).
+**La cassetta degli attrezzi gratuita per chi monta con Final Cut Pro su Mac.** Libera spazio sui dischi senza toccare gli originali, trova i media orfani e quelli mancanti, ordina le cartelle dei clienti, controlla il Mac prima di montare e spiega i crash di Final Cut. In più: backup verificato, salute delle librerie, strumenti video (convertire, comprimere, tagliare, sottotitoli, controllo di consegna per YouTube e Reels), ricerca nei filmati con AI locale e avvisi automatici.
+
+Gira tutta in locale: nessun account, nessun dato inviato (internet si usa solo se lo chiedi tu: «Scarica da link» e «Controlla aggiornamenti»). Gratuita, open source (MIT), in italiano e in inglese.
 
 *English: a free, open-source, fully offline macOS app that shows where your Final Cut Pro media space went: which imports are in use, which files no library uses (orphans), and which library links are broken. Universal binary, macOS 14+.*
 

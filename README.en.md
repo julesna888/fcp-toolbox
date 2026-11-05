@@ -4,7 +4,9 @@
 
 🇬🇧 English · [🇮🇹 Italiano](README.md)
 
-A free, open-source macOS app that shows you **where your Final Cut Pro media space went** and what you can remove safely. It runs entirely on your Mac: no account, no data sent (the internet is used only when you ask: "Download from link" and "Check for updates"). The app itself is available in English and Italian (flag button in the toolbar).
+**The free toolbox for editing with Final Cut Pro on a Mac.** Free up disk space without touching your originals, find orphaned and missing media, sort client folders, check your Mac before editing and get Final Cut crashes explained. Plus: verified backups, library health, video tools (convert, compress, trim, subtitles, delivery checks for YouTube and Reels), local AI search through your footage and automatic alerts.
+
+It runs entirely on your Mac: no account, no data sent (the internet is used only when you ask: "Download from link" and "Check for updates"). Free, open source (MIT), in English and Italian.
 
 <p align="center">
   <img src="docs/screenshots/tools-it.png" width="49%" alt="Tools (Italian)">
