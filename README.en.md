@@ -65,9 +65,9 @@ You decide what to do with disks, folders, libraries, events and projects. The a
 | Supported Macs | Intel and Apple Silicon, macOS 14 Sonoma or newer |
 | Third-party libraries | none (Swift and SwiftUI only) |
 | Optional programs | `ffmpeg` for the video tools, `yt-dlp` for "Download from link" (free, the app explains how to install them) |
-| Optional add-on | "Search your footage" and "Describe clip" download about 765 MB, only if you turn them on |
+| Optional add-on | "Search your footage" and "Describe clip" download about 800 MB, only if you turn them on |
 | Languages | Italian and English (switch with the flag button in the toolbar) |
-| Code | about 11,400 lines in 68 Swift files, 173 automated tests |
+| Code | about 12,400 lines in 75 Swift files, 173 automated tests |
 | Signing | ad-hoc, no Apple notarisation |
 | Licence | MIT |
 

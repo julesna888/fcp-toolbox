@@ -69,9 +69,9 @@ Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti a
 | Mac supportati | Intel e Apple Silicon, macOS 14 Sonoma o più nuovo |
 | Librerie esterne | nessuna (solo Swift e SwiftUI) |
 | Programmi opzionali | `ffmpeg` per gli strumenti video, `yt-dlp` per «Scarica da link» (gratuiti, l'app spiega come installarli) |
-| Componente aggiuntivo | «Cerca nei filmati» e «Descrivi clip» scaricano circa 765 MB, solo se li attivi |
+| Componente aggiuntivo | «Cerca nei filmati» e «Descrivi clip» scaricano circa 800 MB, solo se li attivi |
 | Lingue | italiano e inglese (cambio con la bandierina in alto) |
-| Codice | circa 11.400 righe in 68 file Swift, 173 test automatici |
+| Codice | circa 12.400 righe in 75 file Swift, 173 test automatici |
 | Firma | semplice, senza notarizzazione Apple |
 | Licenza | MIT |
 
