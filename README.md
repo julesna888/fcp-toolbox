@@ -2,6 +2,8 @@
 
 # FCP Toolbox
 
+[🇬🇧 English](README.en.md) · 🇮🇹 Italiano
+
 App gratuita e open source per macOS che ti dice **dove è finito lo spazio dei tuoi media Final Cut Pro** e cosa puoi togliere senza rischi. Gira tutta in locale: nessun account, nessun dato inviato (internet si usa solo se lo chiedi tu: «Scarica da link» e «Controlla aggiornamenti»).
 
 *English: a free, open-source, fully offline macOS app that shows where your Final Cut Pro media space went: which imports are in use, which files no library uses (orphans), and which library links are broken. Universal binary, macOS 14+.*
@@ -59,9 +61,9 @@ Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti a
 
 | | |
 |---|---|
-| Versione | 0.13.8 |
+| Versione | 0.13.9 |
 | App installata | 19 MB |
-| DMG da scaricare | 7,1 MB |
+| DMG da scaricare | circa 7 MB |
 | Mac supportati | Intel e Apple Silicon, macOS 14 Sonoma o più nuovo |
 | Librerie esterne | nessuna (solo Swift e SwiftUI) |
 | Programmi opzionali | `ffmpeg` per gli strumenti video, `yt-dlp` per «Scarica da link» (gratuiti, l'app spiega come installarli) |
@@ -70,8 +72,6 @@ Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti a
 | Codice | circa 11.400 righe in 68 file Swift, 173 test automatici |
 | Firma | semplice, senza notarizzazione Apple |
 | Licenza | MIT |
-
-*English: 19 MB installed, 7.1 MB download, Intel and Apple Silicon, macOS 14+, no third-party libraries, MIT licence.*
 
 ## Installazione
 
