@@ -51,7 +51,7 @@ You decide what to do with disks, folders, libraries, events and projects. The a
 - Everything you remove goes to the **Trash**, so it is recoverable until you empty it. It asks for confirmation first and tells you what you lose.
 - It acts only inside the disks and folders you added, never on the added folder itself.
 - Before touching anything it re-checks the path on disk and doesn't trust the displayed list.
-- It refuses to act if Final Cut Pro is open.
+- It refuses to delete or move anything if Final Cut Pro is open. Backup only warns you instead: the copy may not be consistent.
 - "Cache and renders" doesn't follow symbolic links and doesn't empty originals; use "Libraries and projects" for those.
 - "Orphan media" can be moved only if at least one library has been analysed.
 

@@ -55,7 +55,7 @@ Decidi tu cosa fare di dischi, cartelle, librerie, eventi e progetti. L'app ti a
 - Tutto ciò che elimini va nel **Cestino**, quindi si recupera finché non lo svuoti. Prima chiede conferma e dice cosa perdi.
 - Agisce solo dentro i dischi e le cartelle che hai aggiunto, mai sulla cartella aggiunta stessa.
 - Prima di toccare qualcosa ricontrolla il percorso sul disco, non si fida della lista mostrata.
-- Rifiuta di agire se Final Cut Pro è aperto.
+- Rifiuta di cancellare o spostare se Final Cut Pro è aperto. Il backup invece ti avvisa e basta: la copia potrebbe non essere coerente.
 - “Cache e render” non segue i collegamenti simbolici e non svuota gli originali; per quelli usa “Librerie e progetti”.
 - I “Media orfani” si spostano solo se almeno una libreria è stata analizzata.
 
